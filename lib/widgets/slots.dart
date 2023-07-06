@@ -91,7 +91,7 @@ class Slot extends StatelessWidget {
                 colorFilter: ColorFilter.mode(
                     active
                         ? const Color.fromARGB(255, 54, 168, 35)
-                        : const Color.fromARGB(225, 125, 125, 125),
+                        : const Color.fromARGB(225, 9, 8, 8),
                     BlendMode.srcIn),
                 height: 40,
                 width: 40,
