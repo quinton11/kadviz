@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:kademlia2d/providers/router.dart';
 
 class KademliaRouting extends StatelessWidget {
   final double width, sectionHeight;
@@ -7,18 +9,24 @@ class KademliaRouting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    /*  final routerProvider =  */ Provider.of<RouterProvider>(context);
     return Container(
-      decoration: const BoxDecoration(color: Colors.transparent),
+      decoration: const BoxDecoration(color: Colors.indigo),
       width: width,
       height: sectionHeight,
-      child: const Center(
-        child: Text(
-          'Kademlia Routing',
-          style: TextStyle(
-              color: Color.fromARGB(255, 84, 178, 232),
-              fontFamily: 'RobotoMono'),
+      child: Center(
+        child: CustomPaint(
+          child: Container(
+            height: sectionHeight - 20,
+            width: width - 20,
+            decoration: const BoxDecoration(color: Colors.green),
+            child: const Text('hello'),
+          ),
         ),
       ),
     );
   }
 }
+
+
+/* SizedBox(height: 30, width: 50, child: Text('Hello')) */

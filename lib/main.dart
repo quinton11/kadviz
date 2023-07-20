@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/home/kademlia.dart';
 import 'package:kademlia2d/providers/network.dart';
+import 'package:kademlia2d/providers/router.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -15,7 +16,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => NetworkProvider())
+        ChangeNotifierProvider(create: (context) => NetworkProvider()),
+        ChangeNotifierProvider(create: (context) => RouterProvider())
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
