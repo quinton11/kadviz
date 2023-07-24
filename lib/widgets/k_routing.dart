@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/widgets/canvas.dart';
+import 'package:kademlia2d/widgets/router_info_bar.dart';
 /* import 'package:provider/provider.dart';
 import 'package:kademlia2d/providers/router.dart'; */
 
@@ -10,13 +11,16 @@ class KademliaRouting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.transparent),
-      width: width,
-      height: sectionHeight,
-      child: Center(
-        child: RouterCanvas(height: sectionHeight - 20, width: width - 20),
+    return Stack(children: [
+      Container(
+        decoration: const BoxDecoration(color: Colors.transparent),
+        width: width,
+        height: sectionHeight,
+        child: Center(
+          child: RouterCanvas(height: sectionHeight - 20, width: width - 20),
+        ),
       ),
-    );
+      const RouterInfoBar(),
+    ]);
   }
 }

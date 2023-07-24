@@ -1,9 +1,10 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+//import 'package:flutter/foundation.dart';
 import 'package:kademlia2d/models/branch.dart';
 import 'package:kademlia2d/models/node.dart';
 import 'package:vector_math/vector_math.dart';
+import 'package:flutter/material.dart';
 
 class RouterProvider extends ChangeNotifier {
   List<Node> nodes = [];
@@ -45,31 +46,30 @@ class RouterProvider extends ChangeNotifier {
   Map<String, Branch> calcNodeBranch(
       Node node, int maxDepth, int currentDepth) {
     String id = node.id;
+
+    Map<String, double> dims = getLengthAndDegree(currentDepth, maxDepth);
+    double length = dims['length']!.toDouble();
+    double angle = dims['angle']!.toDouble();
+    double symangle = 360 - angle;
+
     String parentId = node.parentId;
-    String branchId = id[id.length - 1];
-    Vector2 startingPoint = (branches[parentId][branchId] as Branch).endPoint;
-    double angle = branchId == '0' ? 75 : 285;
-
-    /* 
-
-      At different depths create branches with decreasing
-      length and narrower angles between them
-
-      calculate and pass to node
-      
-       */
+    Vector2 startingPoint = Vector2(canvasWidth / 2, 80); // if root node
+    if (id != 'root') {
+      String branchId = id[id.length - 1];
+      startingPoint = (branches[parentId][branchId] as Branch).endPoint;
+    }
 
     //calc end points
-    Vector2 relative = Vector2(0, 100);
+    Vector2 relative = Vector2(0, length);
 
     // 0
-    double xrotatedzero = -relative.y * sin(radians(75)) + startingPoint.x;
+    double xrotatedzero = -relative.y * sin(radians(angle)) + startingPoint.x;
     double yrotatedzero = relative.y * cos(radians(angle)) + startingPoint.y;
     Vector2 endPointZero = Vector2(xrotatedzero, yrotatedzero);
 
     // 1
-    double xrotatedone = -relative.y * sin(radians(285)) + startingPoint.x;
-    double yrotatedone = relative.y * cos(radians(285)) + startingPoint.y;
+    double xrotatedone = -relative.y * sin(radians(symangle)) + startingPoint.x;
+    double yrotatedone = relative.y * cos(radians(symangle)) + startingPoint.y;
     Vector2 endPointOne = Vector2(xrotatedone, yrotatedone);
 
     Branch zero = Branch(
@@ -83,7 +83,6 @@ class RouterProvider extends ChangeNotifier {
   /// Recursively sets and builds the binary tree
   void buildTree(int maxDepth, int currentDepth,
       {required List<String> parentIds}) {
-    currentDepth += 1;
     List<String> parentIdsPass = [];
     if (nodes.isEmpty) {
       //set root node
@@ -98,13 +97,9 @@ class RouterProvider extends ChangeNotifier {
       parentIds.addAll(root.children);
 
       // root node children branches
-      addBranch({
-        "root": {
-          "0": Branch(startPoint: Vector2(0, 0), endPoint: Vector2(0, 0)),
-          "1": Branch(startPoint: Vector2(0, 0), endPoint: Vector2(0, 0))
-        }
-      });
+      addBranch({"root": calcNodeBranch(root, maxDepth, currentDepth)});
     }
+    currentDepth += 1;
 
     // number of times loop should run
     int power = pow(2, currentDepth).toInt();
@@ -128,10 +123,58 @@ class RouterProvider extends ChangeNotifier {
       addBranch({nodeId: calcNodeBranch(node, maxDepth, currentDepth)});
     }
 
-    print("Depth $currentDepth - ${[...nodes]}");
+    //print("Depth $currentDepth - ${[...nodes]}");
 
     if (currentDepth != maxDepth) {
       buildTree(maxDepth, currentDepth, parentIds: parentIdsPass);
+    }
+  }
+
+  /// Gets the length and angle of branches at each depth
+  Map<String, double> getLengthAndDegree(int currentDepth, int maxDepth) {
+    //currently handles max 4 depths
+    Map<String, double> dims = {};
+    if (currentDepth == 0) {
+      dims['length'] = 380;
+      dims['angle'] = 80;
+    } else if (currentDepth == 1) {
+      dims['length'] = 160;
+      dims['angle'] = 75;
+    } else if (currentDepth == 2) {
+      dims['length'] = 100;
+      dims['angle'] = 55;
+    } else if (currentDepth == 3) {
+      dims['length'] = 80;
+      dims['angle'] = 35;
+    } else if (currentDepth == 4) {
+      dims['length'] = 80;
+      dims['angle'] = 30;
+    }
+
+    return dims;
+  }
+
+  void drawTree(Paint paint, Canvas canvas) {
+    for (int i = 0; i < nodes.length; i++) {
+      if (nodes[i].depth != networkSize) {
+        Node nd = nodes[i];
+
+        //get branches of nodes
+        Map<String, dynamic> nodeBranches = branches[nd.id];
+        Branch zero = nodeBranches['0'];
+        Branch one = nodeBranches['1'];
+        // construct offset of node branches
+
+        Offset startPointZero = Offset(zero.startPoint.x, zero.startPoint.y);
+        Offset endPointZero = Offset(zero.endPoint.x, zero.endPoint.y);
+
+        Offset startPointOne = Offset(one.startPoint.x, one.startPoint.y);
+        Offset endPointOne = Offset(one.endPoint.x, one.endPoint.y);
+
+        canvas.drawLine(startPointZero, endPointZero, paint);
+        canvas.drawLine(startPointOne, endPointOne, paint);
+        //draw node branches
+      }
     }
   }
 }
