@@ -48,5 +48,6 @@ class RouterPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     routerProvider.drawTree(paint, canvas);
+    /* canvas.drawImage(image, offset, paint) */
   }
 }

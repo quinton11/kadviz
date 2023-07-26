@@ -3,8 +3,9 @@ import 'dart:math';
 //import 'package:flutter/foundation.dart';
 import 'package:kademlia2d/models/branch.dart';
 import 'package:kademlia2d/models/node.dart';
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math.dart' as vmath;
 import 'package:flutter/material.dart';
+import 'package:path_drawing/path_drawing.dart';
 
 class RouterProvider extends ChangeNotifier {
   List<Node> nodes = [];
@@ -13,10 +14,17 @@ class RouterProvider extends ChangeNotifier {
   int networkSize = 4;
   double canvasWidth = 0;
   double canvasHeight = 0;
+  Path pathToDraw = parseSvgPathData(
+      'M455.5,348H447V99.5c0-17.369-14.131-31.5-31.5-31.5h-368C30.131,68,16,82.131,16,99.5V348H7.5c-4.142,0-7.5,3.358-7.5,7.5v16C0,384.458,10.542,395,23.5,395h416c12.958,0,23.5-10.542,23.5-23.5v-16C463,351.358,459.642,348,455.5,348z M31,99.5C31,90.402,38.402,83,47.5,83h368c9.098,0,16.5,7.402,16.5,16.5V348H31V99.5zM448,371.5c0,4.687-3.813,8.5-8.5,8.5h-416c-4.687,0-8.5-3.813-8.5-8.5V363h169.025c-0.011,0.166-0.025,0.331-0.025,0.5c0,4.142,3.358,7.5,7.5,7.5h80c4.142,0,7.5-3.358,7.5-7.5c0-0.169-0.014-0.334-0.025-0.5H448V371.5z');
 
   RouterProvider();
 
   void setCanvas(double cW, double cH) {
+    pathToDraw.addPath(
+        parseSvgPathData(
+            'M407.5,100h-352c-4.142,0-7.5,3.358-7.5,7.5v216c0,4.142,3.358,7.5,7.5,7.5h352c4.142,0,7.5-3.358,7.5-7.5v-216C415,103.358,411.642,100,407.5,100z M400,316H63V115h337V316z'),
+        const Offset(0, 0));
+
     // to prevent rebuilding tree
     if (cW == canvasWidth && cH == canvasHeight) {
       print('Canvas sizes are the same');
@@ -53,24 +61,29 @@ class RouterProvider extends ChangeNotifier {
     double symangle = 360 - angle;
 
     String parentId = node.parentId;
-    Vector2 startingPoint = Vector2(canvasWidth / 2, 80); // if root node
+    vmath.Vector2 startingPoint =
+        vmath.Vector2(canvasWidth / 2, 80); // if root node
     if (id != 'root') {
       String branchId = id[id.length - 1];
       startingPoint = (branches[parentId][branchId] as Branch).endPoint;
     }
 
     //calc end points
-    Vector2 relative = Vector2(0, length);
+    vmath.Vector2 relative = vmath.Vector2(0, length);
 
     // 0
-    double xrotatedzero = -relative.y * sin(radians(angle)) + startingPoint.x;
-    double yrotatedzero = relative.y * cos(radians(angle)) + startingPoint.y;
-    Vector2 endPointZero = Vector2(xrotatedzero, yrotatedzero);
+    double xrotatedzero =
+        -relative.y * sin(vmath.radians(angle)) + startingPoint.x;
+    double yrotatedzero =
+        relative.y * cos(vmath.radians(angle)) + startingPoint.y;
+    vmath.Vector2 endPointZero = vmath.Vector2(xrotatedzero, yrotatedzero);
 
     // 1
-    double xrotatedone = -relative.y * sin(radians(symangle)) + startingPoint.x;
-    double yrotatedone = relative.y * cos(radians(symangle)) + startingPoint.y;
-    Vector2 endPointOne = Vector2(xrotatedone, yrotatedone);
+    double xrotatedone =
+        -relative.y * sin(vmath.radians(symangle)) + startingPoint.x;
+    double yrotatedone =
+        relative.y * cos(vmath.radians(symangle)) + startingPoint.y;
+    vmath.Vector2 endPointOne = vmath.Vector2(xrotatedone, yrotatedone);
 
     Branch zero = Branch(
       startPoint: startingPoint,
@@ -156,25 +169,76 @@ class RouterProvider extends ChangeNotifier {
 
   void drawTree(Paint paint, Canvas canvas) {
     for (int i = 0; i < nodes.length; i++) {
+      Node nd = nodes[i];
+
+      //get branches of nodes
+      Map<String, dynamic> nodeBranches = branches[nd.id];
+      Branch zero = nodeBranches['0'];
+      Branch one = nodeBranches['1'];
+      // construct offset of node branches
+
+      Offset startPointZero = Offset(zero.startPoint.x, zero.startPoint.y);
+      Offset endPointZero = Offset(zero.endPoint.x, zero.endPoint.y);
+
+      Offset startPointOne = Offset(one.startPoint.x, one.startPoint.y);
+      Offset endPointOne = Offset(one.endPoint.x, one.endPoint.y);
       if (nodes[i].depth != networkSize) {
-        Node nd = nodes[i];
-
-        //get branches of nodes
-        Map<String, dynamic> nodeBranches = branches[nd.id];
-        Branch zero = nodeBranches['0'];
-        Branch one = nodeBranches['1'];
-        // construct offset of node branches
-
-        Offset startPointZero = Offset(zero.startPoint.x, zero.startPoint.y);
-        Offset endPointZero = Offset(zero.endPoint.x, zero.endPoint.y);
-
-        Offset startPointOne = Offset(one.startPoint.x, one.startPoint.y);
-        Offset endPointOne = Offset(one.endPoint.x, one.endPoint.y);
-
         canvas.drawLine(startPointZero, endPointZero, paint);
+        paintText('0', canvas, startPointZero, endPointZero);
         canvas.drawLine(startPointOne, endPointOne, paint);
-        //draw node branches
+        paintText('1', canvas, startPointOne, endPointOne);
+
+        continue;
       }
+
+      // laptop svg at leaf node points
+      Paint laptopPaint = Paint()
+        ..color = const Color.fromARGB(225, 9, 8, 8)
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1;
+      drawLeafs(laptopPaint, canvas, startPointZero);
     }
+  }
+
+  void drawLeafs(Paint paint, Canvas canvas, Offset nd) {
+    //calc paths
+    canvas.save();
+    canvas.translate(nd.dx - 20, nd.dy); //where to start drawing svg
+    canvas.scale(1 / 12); //scale svg to desired size
+    canvas.translate(0, 0); //svg dx dy
+    //draw path
+    canvas.drawPath(pathToDraw, paint);
+    canvas.restore();
+  }
+
+  void paintText(String txt, Canvas canvas, Offset start, Offset end) {
+    final textSpan = TextSpan(
+        text: txt,
+        style: const TextStyle(
+            color: Colors.white, fontFamily: 'RobotoMono', fontSize: 12));
+
+    final textPainter =
+        TextPainter(text: textSpan, textDirection: TextDirection.ltr);
+
+    textPainter.layout(minWidth: 0, maxWidth: 50);
+
+    //magnitude of vector
+    // start + half of x for 1 and - half of x for 0
+    // start + half of y for 1 and 0
+    /* vmath.Vector2 startV = vmath.Vector2(start.dx, start.dy);
+    vmath.Vector2 endV = vmath.Vector2(end.dx, end.dy);
+    vmath.Vector2 resultV = startV-endV; */
+
+    //double mag = resultV.length;
+    double xCenter = start.dx + (start.dx - end.dx).abs() / 2 + 15;
+    double yCenter = start.dy + (end.dy - start.dy) / 2 - 14;
+    /* double xCenter = start.dx + mag / 2 ;
+    double yCenter = start.dy + mag / 2 - 14; */
+    if (txt == '0') {
+      xCenter = start.dx - (start.dx - end.dx).abs() - 5;
+      yCenter = start.dy + (end.dy - start.dy) / 2 - 10;
+      /* xCenter = start.dx - mag; */
+    }
+    textPainter.paint(canvas, Offset(xCenter, yCenter));
   }
 }
