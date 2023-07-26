@@ -222,22 +222,16 @@ class RouterProvider extends ChangeNotifier {
 
     textPainter.layout(minWidth: 0, maxWidth: 50);
 
-    //magnitude of vector
-    // start + half of x for 1 and - half of x for 0
-    // start + half of y for 1 and 0
-    /* vmath.Vector2 startV = vmath.Vector2(start.dx, start.dy);
-    vmath.Vector2 endV = vmath.Vector2(end.dx, end.dy);
-    vmath.Vector2 resultV = startV-endV; */
+    vmath.Vector2 midPoint =
+        vmath.Vector2((start.dx + end.dx) / 2, (start.dy + end.dy) / 2);
 
     //double mag = resultV.length;
-    double xCenter = start.dx + (start.dx - end.dx).abs() / 2 + 15;
-    double yCenter = start.dy + (end.dy - start.dy) / 2 - 14;
-    /* double xCenter = start.dx + mag / 2 ;
-    double yCenter = start.dy + mag / 2 - 14; */
+    double xCenter = midPoint.x + 10;
+    double yCenter = midPoint.y - 15;
+
     if (txt == '0') {
-      xCenter = start.dx - (start.dx - end.dx).abs() - 5;
-      yCenter = start.dy + (end.dy - start.dy) / 2 - 10;
-      /* xCenter = start.dx - mag; */
+      xCenter = midPoint.x - 20;
+      yCenter = midPoint.y - 15;
     }
     textPainter.paint(canvas, Offset(xCenter, yCenter));
   }
