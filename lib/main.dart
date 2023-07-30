@@ -25,7 +25,6 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 84, 178, 232),
               onBackground: const Color.fromARGB(255, 32, 32, 32)),
-          useMaterial3: true,
         ),
         home: const KademliaHome(),
         debugShowCheckedModeBanner: false,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kademlia2d/widgets/add_node.dart';
 import 'package:kademlia2d/widgets/network_map.dart';
 
 class KademliaNetwork extends StatelessWidget {
@@ -53,7 +54,8 @@ class KademliaNetwork extends StatelessWidget {
               ),
             ),
           ),
-        )
+        ),
+        const NewNodeButton()
       ],
     );
   }

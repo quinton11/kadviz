@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kademlia2d/providers/network.dart';
 import 'package:provider/provider.dart';
 import 'package:kademlia2d/providers/router.dart';
 
@@ -9,11 +10,14 @@ class RouterCanvas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final networkProvider = Provider.of<NetworkProvider>(context);
     final routerProvider = Provider.of<RouterProvider>(context);
-    routerProvider.setCanvas(width, height);
+    routerProvider.setCanvas(width, height,
+        netSize: networkProvider.networkSize);
 
     return CustomPaint(
-      painter: RouterPainter(routerProvider: routerProvider),
+      painter: RouterPainter(
+          routerProvider: routerProvider, networkProvider: networkProvider),
       child: Container(
         height: height,
         width: width,
@@ -25,18 +29,17 @@ class RouterCanvas extends StatelessWidget {
 
 class RouterPainter extends CustomPainter {
   final RouterProvider routerProvider;
-  RouterPainter({required this.routerProvider});
+  final NetworkProvider networkProvider;
+  RouterPainter({required this.routerProvider, required this.networkProvider});
   @override
   void paint(Canvas canvas, Size size) {
-    print('Painting...');
-    // TODO: implement paint
+    //print('Painting...');
     // where you draw, canvas to draw on and the size of that canvas
     drawTree(canvas, size);
   }
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    // TODO: implement shouldRepaint
     print('Repainting...');
     return false;
   }
@@ -47,7 +50,6 @@ class RouterPainter extends CustomPainter {
       ..strokeWidth = 1
       ..strokeCap = StrokeCap.round;
 
-    routerProvider.drawTree(paint, canvas);
-    /* canvas.drawImage(image, offset, paint) */
+    routerProvider.drawTree(paint, canvas, networkProvider.hostIds);
   }
 }

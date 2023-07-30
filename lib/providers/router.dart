@@ -19,7 +19,7 @@ class RouterProvider extends ChangeNotifier {
 
   RouterProvider();
 
-  void setCanvas(double cW, double cH) {
+  void setCanvas(double cW, double cH, {int netSize = 4}) {
     pathToDraw.addPath(
         parseSvgPathData(
             'M407.5,100h-352c-4.142,0-7.5,3.358-7.5,7.5v216c0,4.142,3.358,7.5,7.5,7.5h352c4.142,0,7.5-3.358,7.5-7.5v-216C415,103.358,411.642,100,407.5,100z M400,316H63V115h337V316z'),
@@ -37,7 +37,8 @@ class RouterProvider extends ChangeNotifier {
     }
     canvasWidth = cW;
     canvasHeight = cH;
-    setRoutingTree(networkSize);
+    networkSize = netSize;
+    setRoutingTree(netSize);
   }
 
   void setRoutingTree(int networkBitSize) {
@@ -149,7 +150,7 @@ class RouterProvider extends ChangeNotifier {
     Map<String, double> dims = {};
     if (currentDepth == 0) {
       dims['length'] = 380;
-      dims['angle'] = 80;
+      dims['angle'] = 75;
     } else if (currentDepth == 1) {
       dims['length'] = 160;
       dims['angle'] = 75;
@@ -167,7 +168,7 @@ class RouterProvider extends ChangeNotifier {
     return dims;
   }
 
-  void drawTree(Paint paint, Canvas canvas) {
+  void drawTree(Paint paint, Canvas canvas, List<String> ids) {
     for (int i = 0; i < nodes.length; i++) {
       Node nd = nodes[i];
 
@@ -193,7 +194,9 @@ class RouterProvider extends ChangeNotifier {
 
       // laptop svg at leaf node points
       Paint laptopPaint = Paint()
-        ..color = const Color.fromARGB(225, 9, 8, 8)
+        ..color = ids.contains(nd.id)
+            ? const Color.fromARGB(255, 84, 178, 232)
+            : const Color.fromARGB(225, 86, 86, 86)
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
       drawLeafs(laptopPaint, canvas, startPointZero);
