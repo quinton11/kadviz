@@ -16,8 +16,9 @@ class NetworkMap extends StatelessWidget {
         return Slot(
           id: host.id,
           index: idx,
-          active: host.isActive,
+          active: host.isActive && networkProvider.nodeSelected,
           triggerState: networkProvider.updateActiveHost,
+          disableSelect: networkProvider.nodeSelect
         );
       },
       itemCount: networkProvider.hosts.length,

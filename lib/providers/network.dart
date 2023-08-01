@@ -8,11 +8,14 @@ class NetworkProvider with ChangeNotifier {
   late List<Host> hosts;
   late List<String> _hostIds;
   late int _activeIndex = 0;
+  late bool _nodeSelected = false;
   late int networkSize = 4;
+  late String _activeHost = '';
   NetworkProvider() {
     populateHosts();
   }
 
+  /// Generates random nodes to populate network
   void populateHosts() {
     _hostIds = generateRandomNodes();
 
@@ -22,24 +25,41 @@ class NetworkProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// sets the 'active' status of the previous host to false
+  /// and that of the currently selected host to true
   void updateActiveHost(int index) {
     //deactivate previous host
-    hosts[_activeIndex].isActive = false;
+    int idx = hosts.indexWhere((element) => element.id == _activeHost);
+    if (idx != -1) {
+      hosts[idx].isActive = false;
+    }
     _activeIndex = index;
     //activate current host
     hosts[_activeIndex].isActive = true;
+    _activeHost = hosts[_activeIndex].id;
+    _nodeSelected = true;
     notifyListeners();
   }
 
+  /// sets nodeSelected to false to control if a node has been selected
+  void nodeSelect(bool inactive) {
+    _nodeSelected = inactive;
+    notifyListeners();
+  }
+
+  bool get nodeSelected => _nodeSelected;
+
+  String get activeHost => _activeHost;
+
   List<String> get hostIds => _hostIds;
 
+  /// Update the size of the network, default 2^4
   set setNetworkSize(int netSize) {
     if (netSize == networkSize) {
       return;
     }
 
     networkSize = netSize;
-    // randomly set hosts
     populateHosts();
   }
 

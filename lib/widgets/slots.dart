@@ -8,12 +8,14 @@ class Slot extends StatelessWidget {
   final String id;
   final bool active;
   final Function triggerState;
+  final Function disableSelect;
   const Slot(
       {super.key,
       required this.index,
       required this.id,
       required this.active,
-      required this.triggerState});
+      required this.triggerState,
+      required this.disableSelect});
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +75,9 @@ class Slot extends StatelessWidget {
           GestureDetector(
             onTap: () {
               triggerState(index);
+            },
+            onSecondaryTap: () {
+              disableSelect(false);
             },
             child: HoverWidget(
               onHover: (event) {},
