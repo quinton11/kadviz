@@ -168,6 +168,43 @@ class RouterProvider extends ChangeNotifier {
     return dims;
   }
 
+  void drawSpecificTree(Paint paint, Canvas canvas, List<String> ids) {
+    for (int i = 0; i < nodes.length; i++) {
+      Node nd = nodes[i];
+
+      //get branches of nodes
+      Map<String, dynamic> nodeBranches = branches[nd.id];
+      Branch zero = nodeBranches['0'];
+      Branch one = nodeBranches['1'];
+      // construct offset of node branches
+
+      Offset startPointZero = Offset(zero.startPoint.x, zero.startPoint.y);
+      Offset endPointZero = Offset(zero.endPoint.x, zero.endPoint.y);
+
+      Offset startPointOne = Offset(one.startPoint.x, one.startPoint.y);
+      Offset endPointOne = Offset(one.endPoint.x, one.endPoint.y);
+      if (nodes[i].depth != networkSize) {
+        canvas.drawLine(startPointZero, endPointZero, paint);
+        paintText('0', canvas, startPointZero, endPointZero);
+        canvas.drawLine(startPointOne, endPointOne, paint);
+        paintText('1', canvas, startPointOne, endPointOne);
+
+        continue;
+      }
+
+      // laptop svg at leaf node points
+      Paint laptopPaint = Paint()
+        ..color = nd.id == "0" * networkSize
+            ? const Color.fromARGB(255, 54, 168, 35)
+            : (ids.contains(nd.id)
+                ? const Color.fromARGB(255, 84, 178, 232)
+                : const Color.fromARGB(225, 86, 86, 86))
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1;
+      drawLeafs(laptopPaint, canvas, startPointZero);
+    }
+  }
+
   void drawTree(Paint paint, Canvas canvas, List<String> ids) {
     for (int i = 0; i < nodes.length; i++) {
       Node nd = nodes[i];
@@ -237,5 +274,70 @@ class RouterProvider extends ChangeNotifier {
       yCenter = midPoint.y - 15;
     }
     textPainter.paint(canvas, Offset(xCenter, yCenter));
+  }
+
+  void setAnimationPath() {
+    //get 0000 node and set as starting node
+    Node requestSrc = nodes.firstWhere((element) => element.id == "1000");
+    Node requestDest = nodes.firstWhere((element) => element.id == "1001");
+    //find common parent
+    int closeNess = int.parse(requestSrc.id, radix: 2) ^
+        int.parse(requestDest.id, radix: 2);
+    String xor = closeNess.toRadixString(2);
+    if (xor.length < networkSize) {
+      xor = ('0' * (networkSize - xor.length)) + xor;
+    }
+    /* print("Calc");
+    print("Src: ${requestSrc.id}");
+    print("Dest: ${requestDest.id}");
+    print("Xor: $xor"); */
+    int common = (xor.indexOf('1'));
+
+    /* print(
+        "Common parent: ${common == 0 ? "root" : requestSrc.id.substring(0, common)}"); */
+    int cPLoop = (requestSrc.id.length - common).toInt();
+   /*  print("Loop for $cPLoop times");
+    print("Done calc"); */
+    List<Map<String, vmath.Vector2>> animPaths = [];
+    String start = requestSrc.id;
+    for (int i = 0; i < cPLoop; i++) {
+      String end = start.substring(0, start.length - 1);
+      if (i == cPLoop - 1 && cPLoop == networkSize) {
+        //if common node is root node
+        end = "root";
+      }
+      final startBranch = branches[start]["0"].startPoint;
+      final endBranch = branches[end]["0"].startPoint;
+      /* print("Start node - $start - point - ${startBranch}");
+      print("End node - $end - point - ${endBranch}"); */
+      
+      animPaths.add({"from": startBranch, "to": endBranch});
+      start = end;
+    }
+    //print(animPaths);
+
+    //end loop
+    /* print("");
+    print("Narrowing down"); */
+    for (int i = cPLoop; i > 0; i--) {
+      String end = start + requestDest.id[requestDest.id.length - i];
+      if (i == networkSize) {
+        //if common node is root node
+        end = requestDest.id[0];
+      }
+      final startBranch = branches[start]["0"].startPoint;
+      final endBranch = branches[end]["0"].startPoint;
+      /* print("Start node - $start - point - ${startBranch}");
+      print("End node - $end - point - ${endBranch}"); */
+      animPaths.add({"from": startBranch, "to": endBranch});
+      start = end;
+    }
+    //print(animPaths);
+
+    //find int to loop for to fetch path to common parent
+    //loop to populate path to parent
+
+    //find int to loop for to fetch path to destination id
+    //loop to populate path to destination
   }
 }

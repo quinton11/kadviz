@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/widgets/add_node.dart';
+import 'package:kademlia2d/widgets/right_drawer.dart';
+import 'package:kademlia2d/widgets/top_drawer.dart';
+import 'package:kademlia2d/widgets/top_drawer_button.dart';
 import 'package:kademlia2d/widgets/network_map.dart';
+import 'package:kademlia2d/widgets/right_drawer_button.dart';
 
-class KademliaNetwork extends StatelessWidget {
+class KademliaNetwork extends StatefulWidget {
   final double width, sectionHeight;
   const KademliaNetwork(
       {super.key, required this.width, required this.sectionHeight});
 
+  @override
+  State<KademliaNetwork> createState() => _KademliaNetworkState();
+}
+
+class _KademliaNetworkState extends State<KademliaNetwork> {
+  bool _rightisActive = false;
+  bool _topisActive = false;
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -15,12 +26,12 @@ class KademliaNetwork extends StatelessWidget {
           decoration: const BoxDecoration(
             color: Colors.transparent,
           ),
-          width: width,
-          height: sectionHeight,
+          width: widget.width,
+          height: widget.sectionHeight,
           child: Center(
             child: SizedBox(
-              height: sectionHeight - 150,
-              width: width - 50,
+              height: widget.sectionHeight - 150,
+              width: widget.width - 50,
               child: const DecoratedBox(
                 decoration: BoxDecoration(color: Colors.transparent),
                 child: Align(
@@ -55,7 +66,35 @@ class KademliaNetwork extends StatelessWidget {
             ),
           ),
         ),
-        const NewNodeButton()
+        const NewNodeButton(),
+        _rightisActive
+            ? RightDrawer(
+                height: widget.sectionHeight, width: widget.width / 4)
+            : Container(),
+        RightDrawerButton(
+          sectionHeight: widget.sectionHeight,
+          isActive: _rightisActive,
+          triggerActive: () {
+            setState(() {
+              if (!_topisActive) {
+                _rightisActive = !_rightisActive;
+              }
+            });
+          },
+        ),
+        _topisActive
+            ? TopDrawer(height: widget.sectionHeight, width: widget.width)
+            : Container(),
+        TopDrawerButton(
+          width: widget.width,
+          isActive: _topisActive,
+          triggerActive: () {
+            setState(() {
+              _rightisActive = false;
+              _topisActive = !_topisActive;
+            });
+          },
+        )
       ],
     );
   }

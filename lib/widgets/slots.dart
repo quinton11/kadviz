@@ -79,6 +79,11 @@ class Slot extends StatelessWidget {
             onSecondaryTap: () {
               disableSelect(false);
             },
+            onSecondaryLongPress: () {
+              //triggerState(index);
+              print('Long press right button');
+              //REMINDER ADD TOGGLE TO SWITCH MANUALLY BETWEEN ROUTER SCREENS
+            },
             child: HoverWidget(
               onHover: (event) {},
               hoverChild: SvgPicture.asset(

@@ -9,6 +9,7 @@ class RouterInfoBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final networkProvider = Provider.of<NetworkProvider>(context);
     final isSelected = networkProvider.nodeSelected;
+    final animate = networkProvider.animate;
     const TextStyle textStyle = TextStyle(
       fontFamily: 'RobotoMono',
       fontSize: 12,
@@ -24,10 +25,10 @@ class RouterInfoBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Routing Table / ${isSelected ? 'K-bucket' : 'General'}',
+                'Routing Table / ${(isSelected && !animate) ? 'K-bucket' : 'General'}',
                 style: textStyle,
               ),
-              isSelected
+              (isSelected && !animate)
                   ? SizedBox(
                       height: 40,
                       width: 250,
