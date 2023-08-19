@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:kademlia2d/utils/enums.dart';
+import 'package:vector_math/vector_math.dart';
 
 class RequestPacket {
   late String src = '';
@@ -43,14 +44,94 @@ class ResponsePacket {
 }
 
 class APacket {
-  late double radius;
-  late double dX;
-  late double dY;
-  late Offset pos;
+  final double radius = 3;
+  final double outerRadius = 8;
+  late Vector2 pos;
+  late int currentPath = 0;
+  late List<Map<String, Vector2>> paths = [];
+  late Paint packetPaint;
+  late Paint packetInnerPaint;
+  late double speed = 2;
 
-  APacket(
-      {required this.radius,
-      required this.dX,
-      required this.dY,
-      required this.pos});
+  APacket({required this.pos, required this.paths}) {
+    //packet paints
+    packetPaint = Paint()
+      ..color = const Color.fromARGB(255, 84, 178, 232)
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    packetInnerPaint = Paint()
+      ..color = const Color.fromARGB(255, 54, 168, 35)
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1;
+  }
+
+  /// Draw packet on canvas
+  void draw(Canvas canvas) {
+    //draw inner and outer packet circles
+    Offset position = Offset(pos.x, pos.y);
+    canvas.drawCircle(position, outerRadius, packetPaint);
+    canvas.drawCircle(position, radius, packetInnerPaint);
+    drawTraversedPath(canvas, packetInnerPaint);
+  }
+
+  /// Checks if packet should change path direction
+  /// Returns false to continue moving, else true to stop at end
+  bool changePath() {
+    // check if current position is +- offset of the end point
+    // if yes change path to the next
+    Map<String, Vector2> p = paths[currentPath];
+    bool stop = withinBounds(p["to"] as Vector2);
+    return stop;
+  }
+
+  bool withinBounds(Vector2 bound) {
+    double offset = 0.01;
+
+    double xnear = (bound.x - pos.x).abs();
+    double ynear = (bound.y - pos.y).abs();
+    if ((xnear <= offset) && (ynear <= offset)) {
+      if (currentPath < paths.length - 1) {
+        currentPath += 1; // change path
+
+        pos.x = bound.x;
+        pos.y = bound.y;
+      } else {
+        // last end
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void update(Duration dt) {
+    //[{"from":Vector2, "to":Vector2},{"from":Vector2, "to":Vector2},{"from":Vector2, "to":Vector2}]
+    if (!changePath()) {
+      Vector2 from = paths[currentPath]["from"] as Vector2;
+      Vector2 end = paths[currentPath]["to"] as Vector2;
+
+      Vector2 dir = (end - from);
+      Vector2 direction = dir / dir.length;
+
+      // update positions
+      pos.x += direction.x * speed;
+      pos.y += direction.y * speed;
+    }
+  }
+
+  /// Colour path that has been traversed by the packet
+  void drawTraversedPath(Canvas canvas, Paint paint) {
+    // draw current path 'from' to packet's current position
+    Vector2 from = (paths[currentPath]["from"] as Vector2);
+    canvas.drawLine(Offset(from.x, from.y), Offset(pos.x, pos.y), paint);
+
+    // if there are traversed paths, loop through them and draw 'from' to 'to'
+    for (int i = 0; i < currentPath; i++) {
+      Vector2 from = (paths[i]["from"] as Vector2);
+      Vector2 to = (paths[i]["to"] as Vector2);
+
+      canvas.drawLine(Offset(from.x, from.y), Offset(to.x, to.y), paint);
+    }
+  }
 }

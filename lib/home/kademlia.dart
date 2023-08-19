@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:kademlia2d/providers/network.dart';
+import 'package:kademlia2d/providers/router.dart';
 import 'package:kademlia2d/widgets/k_network.dart';
 import 'package:kademlia2d/widgets/k_routing.dart';
+import 'package:provider/provider.dart';
 
 class KademliaHome extends StatelessWidget {
   const KademliaHome({super.key});
@@ -11,6 +14,10 @@ class KademliaHome extends StatelessWidget {
     final double width = MediaQuery.of(context).size.width;
     final double sectionHeight = (height / 2) - 10;
     final bool notpastLimit = height > 710 ? true : false;
+    final networkProvider =
+        Provider.of<NetworkProvider>(context, listen: false);
+    final routerProvider = Provider.of<RouterProvider>(context, listen: false);
+    routerProvider.networkSize = networkProvider.networkSize;
     //if height is 710 show a warning else show component
     return Scaffold(
       body: Center(

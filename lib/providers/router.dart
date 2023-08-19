@@ -3,17 +3,23 @@ import 'dart:math';
 //import 'package:flutter/foundation.dart';
 import 'package:kademlia2d/models/branch.dart';
 import 'package:kademlia2d/models/node.dart';
+import 'package:kademlia2d/models/packet.dart';
 import 'package:vector_math/vector_math.dart' as vmath;
 import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
 
 class RouterProvider extends ChangeNotifier {
   List<Node> nodes = [];
+  List<Map<String, vmath.Vector2>> animPaths = [];
+  List<APacket> animPackets = [];
+  int currentPath = 0;
   Map<String, Node> nodesId = {};
   Map<String, dynamic> branches = {};
   int networkSize = 4;
   double canvasWidth = 0;
   double canvasHeight = 0;
+  bool routerSet = false;
+  String currentOperation = '';
   Path pathToDraw = parseSvgPathData(
       'M455.5,348H447V99.5c0-17.369-14.131-31.5-31.5-31.5h-368C30.131,68,16,82.131,16,99.5V348H7.5c-4.142,0-7.5,3.358-7.5,7.5v16C0,384.458,10.542,395,23.5,395h416c12.958,0,23.5-10.542,23.5-23.5v-16C463,351.358,459.642,348,455.5,348z M31,99.5C31,90.402,38.402,83,47.5,83h368c9.098,0,16.5,7.402,16.5,16.5V348H31V99.5zM448,371.5c0,4.687-3.813,8.5-8.5,8.5h-416c-4.687,0-8.5-3.813-8.5-8.5V363h169.025c-0.011,0.166-0.025,0.331-0.025,0.5c0,4.142,3.358,7.5,7.5,7.5h80c4.142,0,7.5-3.358,7.5-7.5c0-0.169-0.014-0.334-0.025-0.5H448V371.5z');
 
@@ -26,19 +32,28 @@ class RouterProvider extends ChangeNotifier {
         const Offset(0, 0));
 
     // to prevent rebuilding tree
-    if (cW == canvasWidth && cH == canvasHeight) {
-      print('Canvas sizes are the same');
+    if (routerSet) {
+      //print('Canvas sizes are the same');
       return;
     }
+    /* if (cW == canvasWidth && cH == canvasHeight) {
+      print('Canvas sizes are the same');
+      return;
+    } */
 
-    if (nodes.isNotEmpty) {
-      //rebuild branches not nodes
-      print('Rebuilding branch positions');
-    }
     canvasWidth = cW;
     canvasHeight = cH;
     networkSize = netSize;
     setRoutingTree(netSize);
+  }
+
+  void setCurrentOperation(String op) {
+    if (op == currentOperation) {
+      return;
+    }
+    animPackets.clear();
+    animPaths.clear();
+    currentOperation = op;
   }
 
   void setRoutingTree(int networkBitSize) {
@@ -46,6 +61,7 @@ class RouterProvider extends ChangeNotifier {
     nodes.clear();
 
     buildTree(networkBitSize, 0, parentIds: []);
+    routerSet = true;
   }
 
   void addBranch(Map<String, dynamic> nbranch) {
@@ -242,13 +258,15 @@ class RouterProvider extends ChangeNotifier {
 
   void drawLeafs(Paint paint, Canvas canvas, Offset nd) {
     //calc paths
-    canvas.save();
+    /* canvas.save();
     canvas.translate(nd.dx - 20, nd.dy); //where to start drawing svg
     canvas.scale(1 / 12); //scale svg to desired size
     canvas.translate(0, 0); //svg dx dy
     //draw path
     canvas.drawPath(pathToDraw, paint);
-    canvas.restore();
+    canvas.restore(); */
+
+    canvas.drawCircle(Offset(nd.dx, nd.dy + 12), 5, paint);
   }
 
   void paintText(String txt, Canvas canvas, Offset start, Offset end) {
@@ -277,9 +295,24 @@ class RouterProvider extends ChangeNotifier {
   }
 
   void setAnimationPath() {
+    if (animPaths.isNotEmpty) {
+      return;
+    }
+
+    //based on operation coordinate response request objects
+    // and create animation paths for each response, request
+
+    // request
+    sourceToDest('0000', '1011');
+
+    //response
+    sourceToDest('1011', '0000');
+  }
+
+  void sourceToDest(String src, String dest) {
     //get 0000 node and set as starting node
-    Node requestSrc = nodes.firstWhere((element) => element.id == "1000");
-    Node requestDest = nodes.firstWhere((element) => element.id == "1001");
+    Node requestSrc = nodes.firstWhere((element) => element.id == src);
+    Node requestDest = nodes.firstWhere((element) => element.id == dest);
     //find common parent
     int closeNess = int.parse(requestSrc.id, radix: 2) ^
         int.parse(requestDest.id, radix: 2);
@@ -287,18 +320,18 @@ class RouterProvider extends ChangeNotifier {
     if (xor.length < networkSize) {
       xor = ('0' * (networkSize - xor.length)) + xor;
     }
-    /* print("Calc");
+    print("Calc");
     print("Src: ${requestSrc.id}");
     print("Dest: ${requestDest.id}");
-    print("Xor: $xor"); */
+    print("Xor: $xor");
     int common = (xor.indexOf('1'));
 
-    /* print(
-        "Common parent: ${common == 0 ? "root" : requestSrc.id.substring(0, common)}"); */
+    print(
+        "Common parent: ${common == 0 ? "root" : requestSrc.id.substring(0, common)}");
     int cPLoop = (requestSrc.id.length - common).toInt();
-   /*  print("Loop for $cPLoop times");
+    /*  print("Loop for $cPLoop times");
     print("Done calc"); */
-    List<Map<String, vmath.Vector2>> animPaths = [];
+    // start to common
     String start = requestSrc.id;
     for (int i = 0; i < cPLoop; i++) {
       String end = start.substring(0, start.length - 1);
@@ -308,17 +341,17 @@ class RouterProvider extends ChangeNotifier {
       }
       final startBranch = branches[start]["0"].startPoint;
       final endBranch = branches[end]["0"].startPoint;
-      /* print("Start node - $start - point - ${startBranch}");
-      print("End node - $end - point - ${endBranch}"); */
-      
+      print("Start node - $start - point - ${startBranch}");
+      print("End node - $end - point - ${endBranch}");
+
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
     }
     //print(animPaths);
 
-    //end loop
-    /* print("");
-    print("Narrowing down"); */
+    //common to end loop
+    print("");
+    print("Narrowing down");
     for (int i = cPLoop; i > 0; i--) {
       String end = start + requestDest.id[requestDest.id.length - i];
       if (i == networkSize) {
@@ -327,17 +360,19 @@ class RouterProvider extends ChangeNotifier {
       }
       final startBranch = branches[start]["0"].startPoint;
       final endBranch = branches[end]["0"].startPoint;
-      /* print("Start node - $start - point - ${startBranch}");
-      print("End node - $end - point - ${endBranch}"); */
+      print("Start node - $start - point - ${startBranch}");
+      print("End node - $end - point - ${endBranch}");
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
     }
     //print(animPaths);
+    currentPath = 0;
+    vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
+    animPackets.add(APacket(pos: vmath.Vector2(st.x, st.y), paths: animPaths));
+    // set anim packets in array
+  }
 
-    //find int to loop for to fetch path to common parent
-    //loop to populate path to parent
-
-    //find int to loop for to fetch path to destination id
-    //loop to populate path to destination
+  void clearAnimPaths() {
+    animPaths.clear();
   }
 }

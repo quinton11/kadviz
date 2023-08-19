@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/widgets/canvas.dart';
 import 'package:kademlia2d/widgets/router_info_bar.dart';
-/* import 'package:provider/provider.dart';
-import 'package:kademlia2d/providers/router.dart'; */
 
 class KademliaRouting extends StatelessWidget {
   final double width, sectionHeight;

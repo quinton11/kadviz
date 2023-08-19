@@ -7,7 +7,8 @@ class NewNodeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final networkProvider = Provider.of<NetworkProvider>(context);
+    final networkProvider =
+        Provider.of<NetworkProvider>(context, listen: false);
     return Positioned(
       bottom: 20,
       right: 100,

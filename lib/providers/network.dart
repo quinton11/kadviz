@@ -22,7 +22,15 @@ class NetworkProvider with ChangeNotifier {
     'Retrieve',
     'Ping'
   ];
+  late List<String> dhtOperations = const [
+    'Ping',
+    'Find Node',
+    'Find Value',
+    'Store'
+  ];
+  late List<String> formats = const ['DHT (ipfs)', 'DISC (swarm)'];
   late String selectedOperation = 'Default';
+  late String selectedFormat = formats[0];
   NetworkProvider() {
     populateHosts();
   }
@@ -127,7 +135,7 @@ class NetworkProvider with ChangeNotifier {
     int maxHosts = pow(2, networkSize).toInt();
 
     if (_hostIds.length == maxHosts) {
-      print('Network full');
+      // network full
       return;
     }
 

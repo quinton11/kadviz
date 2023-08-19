@@ -67,10 +67,8 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
           ),
         ),
         const NewNodeButton(),
-        _rightisActive
-            ? RightDrawer(
-                height: widget.sectionHeight, width: widget.width / 4)
-            : Container(),
+        if (_rightisActive)
+          RightDrawer(height: widget.sectionHeight, width: widget.width / 4),
         RightDrawerButton(
           sectionHeight: widget.sectionHeight,
           isActive: _rightisActive,
@@ -82,9 +80,8 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
             });
           },
         ),
-        _topisActive
-            ? TopDrawer(height: widget.sectionHeight, width: widget.width)
-            : Container(),
+        if (_topisActive)
+          TopDrawer(height: widget.sectionHeight, width: widget.width),
         TopDrawerButton(
           width: widget.width,
           isActive: _topisActive,

@@ -2,7 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/providers/network.dart';
-import 'package:kademlia2d/widgets/radio_toggle.dart';
+import 'package:kademlia2d/widgets/dht_radio_toggle.dart';
+import 'package:kademlia2d/widgets/disc_radio_toggle.dart';
+import 'package:kademlia2d/widgets/router_format_toggle.dart';
 import 'package:kademlia2d/widgets/toggle_animate.dart';
 import 'package:provider/provider.dart';
 
@@ -18,13 +20,11 @@ class RightDrawer extends StatefulWidget {
 
 class _RightDrawerState extends State<RightDrawer> {
   String _selected = 'Default';
-
   @override
   Widget build(BuildContext context) {
     final networkProvider =
         Provider.of<NetworkProvider>(context, listen: false);
-    _selected = networkProvider.selectedOperation;
-
+    _selected = networkProvider.selectedFormat;
     return Positioned(
       right: 0,
       top: 0,
@@ -47,85 +47,40 @@ class _RightDrawerState extends State<RightDrawer> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
-                      const Text(
-                        'Select Operation',
-                        style: TextStyle(
+                      Text(
+                        'Select Operation - ${_selected}',
+                        style: const TextStyle(
                           color: Color.fromARGB(255, 84, 178, 232),
                           fontFamily: "RobotoMono",
                         ),
                       ),
-                      SizedBox(
-                        height: widget.height - 100,
-                        width: widget.width - 60,
-                        child: DecoratedBox(
-                          decoration:
-                              const BoxDecoration(color: Colors.transparent),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                RadioToggle(
-                                    groupValue: _selected,
-                                    value: networkProvider.operations[0],
-                                    animate: networkProvider.animate,
-                                    triggerChange: (value) {
-                                      setState(() {
-                                        _selected = value.toString();
-                                        networkProvider.selectedOperation =
-                                            _selected;
-                                        networkProvider.animate = false;
-                                      });
-                                    }),
-                                RadioToggle(
-                                    groupValue: _selected,
-                                    value: networkProvider.operations[1],
-                                    animate: networkProvider.animate,
-                                    triggerChange: (value) {
-                                      setState(() {
-                                        _selected = value.toString();
-                                        networkProvider.selectedOperation =
-                                            _selected;
-                                        networkProvider.animate = false;
-                                      });
-                                    }),
-                                RadioToggle(
-                                    groupValue: _selected,
-                                    value: networkProvider.operations[2],
-                                    animate: networkProvider.animate,
-                                    triggerChange: (value) {
-                                      setState(() {
-                                        _selected = value.toString();
-                                        networkProvider.selectedOperation =
-                                            _selected;
-                                        networkProvider.animate = false;
-                                      });
-                                    }),
-                                RadioToggle(
-                                    groupValue: _selected,
-                                    value: networkProvider.operations[3],
-                                    animate: networkProvider.animate,
-                                    triggerChange: (value) {
-                                      setState(() {
-                                        _selected = value.toString();
-                                        networkProvider.selectedOperation =
-                                            _selected;
-                                        networkProvider.animate = false;
-                                      });
-                                    })
-                              ],
-                            ),
-                          ),
-                        ),
+                      _selected == networkProvider.formats[1]
+                          ? DiscRadioToggle(
+                              height: widget.height, width: widget.width)
+                          : DhtRadioToggle(
+                              height: widget.height, width: widget.width),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          ToggleAnimate(
+                              animate: networkProvider.animate,
+                              toggleAnimate: () {
+                                setState(() {
+                                  networkProvider.toggleAnimate();
+                                });
+                              }),
+                          RouterFormatToggle(
+                            triggerChange: (value) {
+                              setState(() {
+                                _selected = value.toString();
+                                networkProvider.selectedFormat = _selected;
+                                networkProvider.animate = false;
+                              });
+                            },
+                            selected: _selected,
+                          )
+                        ],
                       ),
-                      ToggleAnimate(
-                          animate: networkProvider.animate,
-                          toggleAnimate: () {
-                            setState(() {
-                              networkProvider.toggleAnimate();
-                            });
-                          }),
                     ],
                   ),
                 ),

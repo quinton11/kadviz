@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:kademlia2d/models/packet.dart';
 import 'package:kademlia2d/providers/network.dart';
 import 'package:provider/provider.dart';
 import 'package:kademlia2d/providers/router.dart';
@@ -12,17 +16,26 @@ class RouterCanvas extends StatefulWidget {
   State<RouterCanvas> createState() => _RouterCanvasState();
 }
 
-class _RouterCanvasState extends State<RouterCanvas> {
+class _RouterCanvasState extends State<RouterCanvas>
+    with SingleTickerProviderStateMixin {
+  late List<APacket> packets = [];
+  late final Ticker _ticker;
+
   @override
   Widget build(BuildContext context) {
     final networkProvider = Provider.of<NetworkProvider>(context);
-    final routerProvider = Provider.of<RouterProvider>(context);
-    routerProvider.setCanvas(widget.width, widget.height,
-        netSize: networkProvider.networkSize);
-
+    final routerProvider = Provider.of<RouterProvider>(context, listen: false);
+    /* routerProvider.setCanvas(widget.width, widget.height,
+        netSize: networkProvider.networkSize); */
+    packets = routerProvider.animPackets;
+    routerProvider.setCurrentOperation(networkProvider.selectedOperation);
+    //pass router.animPackets to painter to be painted using timer
     return CustomPaint(
       painter: RouterPainter(
-          routerProvider: routerProvider, networkProvider: networkProvider),
+          routerProvider: routerProvider,
+          networkProvider: networkProvider,
+          startTimer: startTimer,
+          cancelTimer: cancelTimer),
       child: Container(
         height: widget.height,
         width: widget.width,
@@ -31,38 +44,86 @@ class _RouterCanvasState extends State<RouterCanvas> {
     );
   }
 
+  late Timer timer;
   @override
   void initState() {
     super.initState();
-    // TODO: IMPLEMENT PACKET STATE
-    // If animate mode, set position of packet to position of source
-    // then for each duration, increment packet dx,dy or position in the
-    // direction of the destination path
-    // When an event or animation is selected, then build path before animating
-    // source and destination would be start and end of branches
+    /*  Duration duration = const Duration(milliseconds: 1000 ~/ 60);
+    timer = Timer.periodic(duration, (timer) {}); */
+    _ticker = createTicker((elapsed) {
+      setState(() {
+        for (var element in packets) {
+          element.update(elapsed);
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _ticker.dispose();
+  }
+
+  void startTimer() {
+    //called to start timer
+    //if timer is already started then skip else initialize timer
+    //print('Start Timer');
+    if (_ticker.isActive) {
+      //print('isactive');
+      return;
+    }
+
+    _ticker.start();
+  }
+
+  void cancelTimer() {
+    if (_ticker.isActive) {
+      //print('Cancelling timer...');
+      //timer.cancel();
+      _ticker.stop();
+      //print('Cancelled timer...');
+    }
   }
 }
 
 class RouterPainter extends CustomPainter {
   final RouterProvider routerProvider;
   final NetworkProvider networkProvider;
-  RouterPainter({required this.routerProvider, required this.networkProvider});
+  final Function startTimer;
+  final Function cancelTimer;
+  RouterPainter(
+      {required this.routerProvider,
+      required this.networkProvider,
+      required this.startTimer,
+      required this.cancelTimer});
   @override
   void paint(Canvas canvas, Size size) {
-    print('Painting...');
-    if (networkProvider.animate) {
-      print("Animate operation");
-      routerProvider.setAnimationPath();
-    }
-    // where you draw, canvas to draw on and the size of that canvas
+    routerProvider.setCanvas(size.width, size.height,
+        netSize: networkProvider.networkSize);
+
     (networkProvider.nodeSelected && !networkProvider.animate)
         ? drawSpecificTree(canvas, size)
         : drawTree(canvas, size);
+
+    if (networkProvider.animate) {
+      //print("Animate operation");
+      routerProvider.setAnimationPath();
+
+      for (var element in routerProvider.animPackets) {
+        //print("Position: ${element.pos}");
+        element.draw(canvas);
+      }
+
+      startTimer();
+    } else {
+      cancelTimer();
+    }
   }
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    print('Repainting...');
+    //print('Repainting...');
     return true;
   }
 
