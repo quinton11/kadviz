@@ -53,6 +53,7 @@ class APacket {
   late Paint packetInnerPaint;
   late Paint pathPaint;
   late double speed = 2;
+  late bool done = false;
   final int hop;
   final int doneIdx;
 
@@ -77,12 +78,12 @@ class APacket {
       pathPaint = packetInnerPaint;
     } else if (hop == 1) {
       pathPaint = Paint()
-        ..color = const Color.fromARGB(255, 56, 1, 123)
+        ..color = const Color.fromARGB(255, 123, 1, 62)
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
     } else {
       pathPaint = Paint()
-        ..color = Color.fromARGB(255, 123, 1, 62)
+        ..color = const Color.fromARGB(255, 123, 1, 62)
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
     }
@@ -120,6 +121,7 @@ class APacket {
         pos.y = bound.y;
       } else {
         // last end
+        done = true;
         return true;
       }
     }

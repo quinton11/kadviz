@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/providers/network.dart';
+import 'package:kademlia2d/providers/router.dart';
 import 'package:kademlia2d/widgets/dht_radio_toggle.dart';
 import 'package:kademlia2d/widgets/disc_radio_toggle.dart';
 import 'package:kademlia2d/widgets/router_format_toggle.dart';
@@ -25,6 +26,7 @@ class _RightDrawerState extends State<RightDrawer> {
   Widget build(BuildContext context) {
     final networkProvider =
         Provider.of<NetworkProvider>(context, listen: false);
+        final routerProvider = Provider.of<RouterProvider>(context,listen: false);
     _selected = networkProvider.selectedFormat;
     return Positioned(
       right: 0,
@@ -63,6 +65,7 @@ class _RightDrawerState extends State<RightDrawer> {
                                 setState(() {
                                   _selectedOperation = value.toString();
                                   networkProvider.setOperation(_selectedOperation);
+                                  routerProvider.clearAnimPaths();
                                   networkProvider.animate = false;
                                 });
                               }
@@ -75,6 +78,7 @@ class _RightDrawerState extends State<RightDrawer> {
                                 setState(() {
                                   _selectedOperation = value.toString();
                                   networkProvider.setOperation(_selectedOperation);
+                                  routerProvider.clearAnimPaths();
                                   networkProvider.animate = false;
                                 });
                               }),
@@ -86,6 +90,7 @@ class _RightDrawerState extends State<RightDrawer> {
                               toggleAnimate: () {
                                 setState(() {
                                   networkProvider.toggleAnimate();
+                                  //routerProvider.clearAnimPaths();
                                 });
                               }),
                           RouterFormatToggle(

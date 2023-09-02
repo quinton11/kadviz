@@ -19,17 +19,20 @@ class RouterCanvas extends StatefulWidget {
 class _RouterCanvasState extends State<RouterCanvas>
     with SingleTickerProviderStateMixin {
   late List<APacket> packets = [];
+  late Map<int, List<bool>> packetCtrl = {};
+  late int currentHop = 0;
   late final Ticker _ticker;
 
   @override
   Widget build(BuildContext context) {
     final networkProvider = Provider.of<NetworkProvider>(context);
     final routerProvider = Provider.of<RouterProvider>(context, listen: false);
-    /* routerProvider.setCanvas(widget.width, widget.height,
-        netSize: networkProvider.networkSize); */
+
     packets = routerProvider.animPackets;
+    packetCtrl = routerProvider.packetControl;
     routerProvider.setCurrentOperation(networkProvider.selectedOperation);
-    //pass router.animPackets to painter to be painted using timer
+    currentHop = routerProvider.currentHop;
+
     return CustomPaint(
       painter: RouterPainter(
           routerProvider: routerProvider,
@@ -53,8 +56,12 @@ class _RouterCanvasState extends State<RouterCanvas>
     _ticker = createTicker((elapsed) {
       setState(() {
         for (var element in packets) {
-          //print(packets.length);
-          element.update(elapsed);
+          // check for current hop
+          //update elements in current hop
+          if (element.hop == currentHop) {
+            element.update(elapsed);
+          }
+          
         }
       });
     });
@@ -114,6 +121,34 @@ class RouterPainter extends CustomPainter {
       for (var element in routerProvider.animPackets) {
         //print("Position: ${element.pos}");
         element.draw(canvas);
+        //print(routerProvider.currentHop);
+        //print(element.hop);
+        if(element.hop!=routerProvider.currentHop){
+          continue;
+        }
+        routerProvider.packetControl[routerProvider.currentHop]
+              ?[element.doneIdx] = element.done;
+
+        /* if (element.hop == routerProvider.currentHop) {
+          routerProvider.packetControl[routerProvider.currentHop]
+              ?[element.doneIdx] = element.done;
+        } */
+        //print(routerProvider.packetControl[routerProvider.currentHop]);
+        if (!routerProvider.packetControl[routerProvider.currentHop]!
+            .contains(false)) {
+          /* print('Done with current hop');
+          print(routerProvider.packetControl.keys.length);
+          print(routerProvider.packetControl);
+          print(routerProvider.currentHop); */
+          if (routerProvider.packetControl.keys.length !=
+              routerProvider.currentHop + 1) {
+            /* print('Done with current hop moving to next');
+            print(routerProvider.packetControl);
+            print(routerProvider.animPackets); */
+            routerProvider.currentHop += 1;
+          }
+        }
+
         /* print('Element hop: ${element.hop}');
         print('Element idx in hop: ${element.doneIdx}'); */
       }

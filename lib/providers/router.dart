@@ -14,7 +14,9 @@ class RouterProvider extends ChangeNotifier {
   List<APacket> animPackets = [];
   int currentPath = 0;
   Map<String, Node> nodesId = {};
+  Map<int, List<bool>> packetControl = {};
   Map<String, dynamic> branches = {};
+  int currentHop = 0;
   int networkSize = 4;
   double canvasWidth = 0;
   double canvasHeight = 0;
@@ -312,6 +314,7 @@ class RouterProvider extends ChangeNotifier {
     for (var k in keys) {
       final path = paths[k] as List<Map<String, String>>;
       List<bool> done = List.filled(path.length, false);
+      packetControl.addAll({k: done});
       int doneid = 0;
 
       //for each path create a sourceToDest to simulate a request response
@@ -392,15 +395,14 @@ class RouterProvider extends ChangeNotifier {
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
     }
-    //print(animPaths);
     currentPath = 0;
-    /* vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
-    animPackets.add(APacket(pos: vmath.Vector2(st.x, st.y), paths: animPaths,hop: 0,doneIdx: 0)); */
     // set anim packets in array
   }
 
   void clearAnimPaths() {
     animPaths.clear();
     animPackets.clear();
+    packetControl.clear();
+    currentHop = 0;
   }
 }

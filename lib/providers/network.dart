@@ -98,6 +98,7 @@ class NetworkProvider with ChangeNotifier {
     while (!unique) {
       String id = _hostIds[random.nextInt(_hostIds.length)];
       if (count > 6) {
+        nodeToFind = id;
         break;
       }
       if (bucketIds.contains(id) || id == srcId) {
