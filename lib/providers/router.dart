@@ -48,6 +48,9 @@ class RouterProvider extends ChangeNotifier {
   }
 
   void setCurrentOperation(String op) {
+    /*  print(op);
+    print('here');
+    print(currentOperation); */
     if (op == currentOperation) {
       return;
     }
@@ -294,19 +297,43 @@ class RouterProvider extends ChangeNotifier {
     textPainter.paint(canvas, Offset(xCenter, yCenter));
   }
 
-  void setAnimationPath() {
-    if (animPaths.isNotEmpty) {
+  void setAnimationPath(Map<int, List<Map<String, String>>> paths) {
+    if (animPackets.isNotEmpty) {
       return;
     }
+    print('Animating..');
+    print(paths);
 
-    //based on operation coordinate response request objects
-    // and create animation paths for each response, request
+    //get keys in map
+    //loop through keys
+    // for each key get the length of the paths
+    //initialize a false done array for each hop with length equal to the length src dest pairs
+    final keys = paths.keys.toList();
+    for (var k in keys) {
+      final path = paths[k] as List<Map<String, String>>;
+      List<bool> done = List.filled(path.length, false);
+      int doneid = 0;
 
-    // request
-    sourceToDest('0000', '1011');
+      //for each path create a sourceToDest to simulate a request response
+      //src to destination
+      for (var p in path) {
+        //request
+        sourceToDest(p["src"] as String, p["dest"] as String);
 
-    //response
-    sourceToDest('1011', '0000');
+        //response
+        sourceToDest(p["dest"] as String, p["src"] as String);
+
+        vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
+        animPackets.add(APacket(
+            pos: vmath.Vector2(st.x, st.y),
+            paths: [...animPaths],
+            hop: k,
+            doneIdx: doneid));
+        print(animPackets.length);
+        doneid += 1;
+        animPaths.clear();
+      }
+    }
   }
 
   void sourceToDest(String src, String dest) {
@@ -320,14 +347,14 @@ class RouterProvider extends ChangeNotifier {
     if (xor.length < networkSize) {
       xor = ('0' * (networkSize - xor.length)) + xor;
     }
-    print("Calc");
+    /*  print("Calc");
     print("Src: ${requestSrc.id}");
     print("Dest: ${requestDest.id}");
-    print("Xor: $xor");
+    print("Xor: $xor"); */
     int common = (xor.indexOf('1'));
 
-    print(
-        "Common parent: ${common == 0 ? "root" : requestSrc.id.substring(0, common)}");
+/*     print(
+        "Common parent: ${common == 0 ? "root" : requestSrc.id.substring(0, common)}"); */
     int cPLoop = (requestSrc.id.length - common).toInt();
     /*  print("Loop for $cPLoop times");
     print("Done calc"); */
@@ -341,8 +368,8 @@ class RouterProvider extends ChangeNotifier {
       }
       final startBranch = branches[start]["0"].startPoint;
       final endBranch = branches[end]["0"].startPoint;
-      print("Start node - $start - point - ${startBranch}");
-      print("End node - $end - point - ${endBranch}");
+      /* print("Start node - $start - point - ${startBranch}");
+      print("End node - $end - point - ${endBranch}"); */
 
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
@@ -350,8 +377,8 @@ class RouterProvider extends ChangeNotifier {
     //print(animPaths);
 
     //common to end loop
-    print("");
-    print("Narrowing down");
+    /* print("");
+    print("Narrowing down"); */
     for (int i = cPLoop; i > 0; i--) {
       String end = start + requestDest.id[requestDest.id.length - i];
       if (i == networkSize) {
@@ -360,19 +387,20 @@ class RouterProvider extends ChangeNotifier {
       }
       final startBranch = branches[start]["0"].startPoint;
       final endBranch = branches[end]["0"].startPoint;
-      print("Start node - $start - point - ${startBranch}");
-      print("End node - $end - point - ${endBranch}");
+      /* print("Start node - $start - point - ${startBranch}");
+      print("End node - $end - point - ${endBranch}"); */
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
     }
     //print(animPaths);
     currentPath = 0;
-    vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
-    animPackets.add(APacket(pos: vmath.Vector2(st.x, st.y), paths: animPaths));
+    /* vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
+    animPackets.add(APacket(pos: vmath.Vector2(st.x, st.y), paths: animPaths,hop: 0,doneIdx: 0)); */
     // set anim packets in array
   }
 
   void clearAnimPaths() {
     animPaths.clear();
+    animPackets.clear();
   }
 }

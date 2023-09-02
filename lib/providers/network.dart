@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:kademlia2d/models/host.dart';
 import 'package:binary_counter/binary_counter.dart';
 import 'package:kademlia2d/models/packet.dart';
+import 'package:kademlia2d/utils/constants.dart';
 import 'package:kademlia2d/utils/enums.dart';
 
 class NetworkProvider with ChangeNotifier {
@@ -16,17 +17,19 @@ class NetworkProvider with ChangeNotifier {
   late String _activeHost = '';
   late String bootNodeId = '';
   late bool animate = false;
+  late bool simulate = false;
+  late Map<int, List<Map<String, String>>> animPaths = {};
   late List<String> operations = const [
-    'Boot-Node',
-    'Store',
-    'Retrieve',
-    'Ping'
+    swarmBOOTNODE,
+    swarmtSTORE,
+    swarmRETRIEVE,
+    swarmPING
   ];
   late List<String> dhtOperations = const [
-    'Ping',
-    'Find Node',
-    'Find Value',
-    'Store'
+    dhtPING,
+    dhtFINDNODE,
+    dhtFINDVALUE,
+    dhtSTORE
   ];
   late List<String> formats = const ['DHT (ipfs)', 'DISC (swarm)'];
   late String selectedOperation = 'Default';
@@ -38,6 +41,130 @@ class NetworkProvider with ChangeNotifier {
   void toggleAnimate() {
     animate = !animate;
     notifyListeners();
+  }
+
+  void simulateOperation() {
+    if (simulate) {
+      return;
+    }
+    switch (selectedOperation) {
+      case dhtPING:
+        print(dhtPING);
+        simulatePing();
+      case dhtFINDNODE:
+        print(dhtFINDNODE);
+        simulateFindNode();
+      case dhtFINDVALUE:
+        print(dhtFINDVALUE);
+        simulatePing();
+      case dhtSTORE:
+        print(dhtSTORE);
+        simulatePing();
+    }
+    simulate = true;
+  }
+
+  void setOperation(String op) {
+    selectedOperation = op;
+    simulate = false;
+    animPaths.clear();
+  }
+
+  void simulatePing() {
+    final random = Random();
+    String srcId = _hostIds[random.nextInt(_hostIds.length)];
+    String destId = '';
+    bool unique = false;
+    while (!unique) {
+      destId = _hostIds[random.nextInt(_hostIds.length)];
+      if (srcId == destId) {
+        continue;
+      }
+      unique = true;
+    }
+    animPaths[0] = [];
+    animPaths[0]!.add({"src": srcId, "dest": destId});
+  }
+
+  void simulateFindNode() {
+    // get src
+    final random = Random();
+    String srcId = _hostIds[random.nextInt(_hostIds.length)];
+    String nodeToFind = '';
+    bool unique = false;
+    Host h = getHostFromId(srcId);
+    List<String> bucketIds = h.getBucketIds();
+    int count = 0;
+    while (!unique) {
+      String id = _hostIds[random.nextInt(_hostIds.length)];
+      if (count > 6) {
+        break;
+      }
+      if (bucketIds.contains(id) || id == srcId) {
+        count += 1;
+        continue;
+      }
+
+      nodeToFind = id;
+      unique = true;
+    }
+    // get node to find
+    print('Source: $srcId');
+    print('Node to findL $nodeToFind');
+    print('Bucket Ids: $bucketIds');
+    List<String> visitedNode = [];
+    visitedNode.add(srcId);
+    //run loop of checking for nodes till convergence
+    List<dynamic> destNodes = [];
+    // check for src's k nearest nodes
+    (destNodes, _) = h.bucketCloseNess(nodeToFind);
+    print('Dest Nodes: $destNodes');
+
+    bool converged = false;
+    int currentHop = 0;
+
+    while (!converged) {
+      final contains =
+          destNodes.where((element) => !visitedNode.contains(element)).toList();
+      print('Nodes not visited $contains');
+      if (contains.isEmpty) {
+        //converged, return list of hops
+        converged = true;
+        break;
+      }
+
+      animPaths[currentHop] = [];
+      //add to anim object
+      for (final v in contains) {
+        //path[currentHop].add({"src": srcId, "dest": v});
+        animPaths[currentHop]!.add({"src": srcId, "dest": v});
+        print('HOP: $currentHop src: $srcId, "dest": $v');
+      }
+      //animPaths.addAll(path);
+      print('After hop: $animPaths');
+      visitedNode.addAll([...destNodes]);
+      visitedNode = visitedNode.toSet().toList();
+      print('Visited Nodes: $visitedNode');
+      // set current hop
+      currentHop += 1;
+      // if not create current hop, add src and dest keys to current hop
+      if (currentHop != 0) {
+        final closeNodes = [];
+        List<dynamic> nextNodes = [];
+        for (var v in destNodes) {
+          Host dst = getHostFromId(v);
+          (nextNodes, _) = dst.bucketCloseNess(nodeToFind);
+          print('');
+          print('Dest Node: $v  close nodes: $nextNodes');
+          print('');
+          closeNodes.addAll(nextNodes);
+        }
+        destNodes = closeNodes.toSet().toList();
+      }
+    }
+
+    print('Anim Paths!!!');
+    print(animPaths);
   }
 
   /// Generates random nodes to populate network

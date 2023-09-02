@@ -51,9 +51,16 @@ class APacket {
   late List<Map<String, Vector2>> paths = [];
   late Paint packetPaint;
   late Paint packetInnerPaint;
+  late Paint pathPaint;
   late double speed = 2;
+  final int hop;
+  final int doneIdx;
 
-  APacket({required this.pos, required this.paths}) {
+  APacket(
+      {required this.pos,
+      required this.paths,
+      required this.hop,
+      required this.doneIdx}) {
     //packet paints
     packetPaint = Paint()
       ..color = const Color.fromARGB(255, 84, 178, 232)
@@ -65,6 +72,20 @@ class APacket {
       ..color = const Color.fromARGB(255, 54, 168, 35)
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 1;
+
+    if (hop == 0) {
+      pathPaint = packetInnerPaint;
+    } else if (hop == 1) {
+      pathPaint = Paint()
+        ..color = const Color.fromARGB(255, 56, 1, 123)
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1;
+    } else {
+      pathPaint = Paint()
+        ..color = Color.fromARGB(255, 123, 1, 62)
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1;
+    }
   }
 
   /// Draw packet on canvas
@@ -73,7 +94,7 @@ class APacket {
     Offset position = Offset(pos.x, pos.y);
     canvas.drawCircle(position, outerRadius, packetPaint);
     canvas.drawCircle(position, radius, packetInnerPaint);
-    drawTraversedPath(canvas, packetInnerPaint);
+    drawTraversedPath(canvas, pathPaint);
   }
 
   /// Checks if packet should change path direction

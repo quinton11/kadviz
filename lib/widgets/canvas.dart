@@ -53,6 +53,7 @@ class _RouterCanvasState extends State<RouterCanvas>
     _ticker = createTicker((elapsed) {
       setState(() {
         for (var element in packets) {
+          //print(packets.length);
           element.update(elapsed);
         }
       });
@@ -107,12 +108,14 @@ class RouterPainter extends CustomPainter {
         : drawTree(canvas, size);
 
     if (networkProvider.animate) {
-      //print("Animate operation");
-      routerProvider.setAnimationPath();
+      networkProvider.simulateOperation();
+      routerProvider.setAnimationPath(networkProvider.animPaths);
 
       for (var element in routerProvider.animPackets) {
         //print("Position: ${element.pos}");
         element.draw(canvas);
+        /* print('Element hop: ${element.hop}');
+        print('Element idx in hop: ${element.doneIdx}'); */
       }
 
       startTimer();
@@ -123,7 +126,6 @@ class RouterPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    //print('Repainting...');
     return true;
   }
 

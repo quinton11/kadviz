@@ -3,26 +3,25 @@ import 'package:kademlia2d/providers/network.dart';
 import 'package:kademlia2d/widgets/radio_toggle.dart';
 import 'package:provider/provider.dart';
 
-class DiscRadioToggle extends StatefulWidget {
+class DiscRadioToggle extends StatelessWidget {
   final double height;
   final double width;
-  const DiscRadioToggle({super.key, required this.height, required this.width});
-
-  @override
-  State<DiscRadioToggle> createState() => _DiscRadioToggleState();
-}
-
-class _DiscRadioToggleState extends State<DiscRadioToggle> {
-  String _selected = 'Default';
+  final String selectedOperation;
+  final Function toggleState;
+  const DiscRadioToggle(
+      {super.key,
+      required this.height,
+      required this.width,
+      required this.selectedOperation,
+      required this.toggleState});
 
   @override
   Widget build(BuildContext context) {
     final networkProvider =
         Provider.of<NetworkProvider>(context, listen: false);
-    _selected = networkProvider.selectedOperation;
     return SizedBox(
-      height: widget.height - 100,
-      width: widget.width - 60,
+      height: height - 100,
+      width: width - 60,
       child: DecoratedBox(
         decoration: const BoxDecoration(color: Colors.transparent),
         child: Padding(
@@ -32,48 +31,32 @@ class _DiscRadioToggleState extends State<DiscRadioToggle> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               RadioToggle(
-                  groupValue: _selected,
+                  groupValue: selectedOperation,
                   value: networkProvider.operations[0],
                   animate: networkProvider.animate,
                   triggerChange: (value) {
-                    setState(() {
-                      _selected = value.toString();
-                      networkProvider.selectedOperation = _selected;
-                      networkProvider.animate = false;
-                    });
+                    toggleState(value);
                   }),
               RadioToggle(
-                  groupValue: _selected,
+                  groupValue: selectedOperation,
                   value: networkProvider.operations[1],
                   animate: networkProvider.animate,
                   triggerChange: (value) {
-                    setState(() {
-                      _selected = value.toString();
-                      networkProvider.selectedOperation = _selected;
-                      networkProvider.animate = false;
-                    });
+                    toggleState(value);
                   }),
               RadioToggle(
-                  groupValue: _selected,
+                  groupValue: selectedOperation,
                   value: networkProvider.operations[2],
                   animate: networkProvider.animate,
                   triggerChange: (value) {
-                    setState(() {
-                      _selected = value.toString();
-                      networkProvider.selectedOperation = _selected;
-                      networkProvider.animate = false;
-                    });
+                    toggleState(value);
                   }),
               RadioToggle(
-                  groupValue: _selected,
+                  groupValue: selectedOperation,
                   value: networkProvider.operations[3],
                   animate: networkProvider.animate,
                   triggerChange: (value) {
-                    setState(() {
-                      _selected = value.toString();
-                      networkProvider.selectedOperation = _selected;
-                      networkProvider.animate = false;
-                    });
+                    toggleState(value);
                   })
             ],
           ),

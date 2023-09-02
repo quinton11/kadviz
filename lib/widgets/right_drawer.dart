@@ -20,6 +20,7 @@ class RightDrawer extends StatefulWidget {
 
 class _RightDrawerState extends State<RightDrawer> {
   String _selected = 'Default';
+  String _selectedOperation = 'Default';
   @override
   Widget build(BuildContext context) {
     final networkProvider =
@@ -56,9 +57,27 @@ class _RightDrawerState extends State<RightDrawer> {
                       ),
                       _selected == networkProvider.formats[1]
                           ? DiscRadioToggle(
-                              height: widget.height, width: widget.width)
+                              height: widget.height, width: widget.width,
+                              selectedOperation:_selectedOperation,
+                              toggleState: (value) {
+                                setState(() {
+                                  _selectedOperation = value.toString();
+                                  networkProvider.setOperation(_selectedOperation);
+                                  networkProvider.animate = false;
+                                });
+                              }
+                              )
                           : DhtRadioToggle(
-                              height: widget.height, width: widget.width),
+                              height: widget.height,
+                              width: widget.width,
+                              selectedOperation: _selectedOperation,
+                              toggleState: (value) {
+                                setState(() {
+                                  _selectedOperation = value.toString();
+                                  networkProvider.setOperation(_selectedOperation);
+                                  networkProvider.animate = false;
+                                });
+                              }),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
