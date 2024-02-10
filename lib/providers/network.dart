@@ -111,7 +111,7 @@ class NetworkProvider with ChangeNotifier {
     }
     // get node to find
     print('Source: $srcId');
-    print('Node to findL $nodeToFind');
+    print('Node to find $nodeToFind');
     print('Bucket Ids: $bucketIds');
     List<String> visitedNode = [];
     visitedNode.add(srcId);

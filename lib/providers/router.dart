@@ -34,10 +34,10 @@ class RouterProvider extends ChangeNotifier {
         const Offset(0, 0));
 
     // to prevent rebuilding tree
-    if (routerSet) {
+    /* if (routerSet) {
       //print('Canvas sizes are the same');
       return;
-    }
+    } */
     /* if (cW == canvasWidth && cH == canvasHeight) {
       print('Canvas sizes are the same');
       return;
