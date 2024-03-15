@@ -56,12 +56,16 @@ class APacket {
   late bool done = false;
   final int hop;
   final int doneIdx;
+  final String src;
+  final String dest;
 
   APacket(
       {required this.pos,
       required this.paths,
       required this.hop,
-      required this.doneIdx}) {
+      required this.doneIdx,
+      required this.src,
+      required this.dest}) {
     //packet paints
     packetPaint = Paint()
       ..color = const Color.fromARGB(255, 84, 178, 232)

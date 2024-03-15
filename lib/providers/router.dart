@@ -1,6 +1,7 @@
 import 'dart:math';
 
 //import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:kademlia2d/models/branch.dart';
 import 'package:kademlia2d/models/node.dart';
 import 'package:kademlia2d/models/packet.dart';
@@ -16,6 +17,7 @@ class RouterProvider extends ChangeNotifier {
   Map<String, Node> nodesId = {};
   Map<int, List<bool>> packetControl = {};
   Map<String, dynamic> branches = {};
+  Map<int, List<Map<String, String>>> stackPaths = {};
   int currentHop = 0;
   int networkSize = 4;
   double canvasWidth = 0;
@@ -71,6 +73,13 @@ class RouterProvider extends ChangeNotifier {
 
   void addBranch(Map<String, dynamic> nbranch) {
     branches.addAll(nbranch);
+  }
+
+  void nextHop() {
+    currentHop += 1;
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
   }
 
   Map<String, Branch> calcNodeBranch(
@@ -305,6 +314,7 @@ class RouterProvider extends ChangeNotifier {
     }
     print('Animating..');
     print(paths);
+    stackPaths = paths;
 
     //get keys in map
     //loop through keys
@@ -331,7 +341,9 @@ class RouterProvider extends ChangeNotifier {
             pos: vmath.Vector2(st.x, st.y),
             paths: [...animPaths],
             hop: k,
-            doneIdx: doneid));
+            doneIdx: doneid,
+            src: p["src"] as String,
+            dest: p["dest"] as String));
         print(animPackets.length);
         doneid += 1;
         animPaths.clear();
@@ -399,10 +411,24 @@ class RouterProvider extends ChangeNotifier {
     // set anim packets in array
   }
 
+  bool checkPacketControlIsDone() {
+    for (var key in packetControl.keys) {
+      for (var value in packetControl[key]!) {
+        if (!value) {
+          return false;
+        }
+      }
+    }
+    print("Done with animation");
+
+    return true;
+  }
+
   void clearAnimPaths() {
     animPaths.clear();
     animPackets.clear();
     packetControl.clear();
+    stackPaths.clear();
     currentHop = 0;
   }
 }

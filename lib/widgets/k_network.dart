@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:kademlia2d/providers/network.dart';
 import 'package:kademlia2d/widgets/add_node.dart';
 import 'package:kademlia2d/widgets/right_drawer.dart';
 import 'package:kademlia2d/widgets/top_drawer.dart';
 import 'package:kademlia2d/widgets/top_drawer_button.dart';
 import 'package:kademlia2d/widgets/network_map.dart';
 import 'package:kademlia2d/widgets/right_drawer_button.dart';
+import 'package:provider/provider.dart';
 
 class KademliaNetwork extends StatefulWidget {
   final double width, sectionHeight;
@@ -20,6 +22,10 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
   bool _topisActive = false;
   @override
   Widget build(BuildContext context) {
+    final networkProvider = Provider.of<NetworkProvider>(context);
+    if (networkProvider.animate) {
+      _topisActive = true;
+    }
     return Stack(
       children: [
         Container(

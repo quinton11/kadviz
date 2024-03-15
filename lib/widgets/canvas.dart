@@ -61,7 +61,6 @@ class _RouterCanvasState extends State<RouterCanvas>
           if (element.hop == currentHop) {
             element.update(elapsed);
           }
-          
         }
       });
     });
@@ -119,33 +118,28 @@ class RouterPainter extends CustomPainter {
       routerProvider.setAnimationPath(networkProvider.animPaths);
 
       for (var element in routerProvider.animPackets) {
-        //print("Position: ${element.pos}");
         element.draw(canvas);
         //print(routerProvider.currentHop);
         //print(element.hop);
-        if(element.hop!=routerProvider.currentHop){
+        if (element.hop != routerProvider.currentHop) {
           continue;
         }
         routerProvider.packetControl[routerProvider.currentHop]
-              ?[element.doneIdx] = element.done;
+            ?[element.doneIdx] = element.done;
 
-        /* if (element.hop == routerProvider.currentHop) {
-          routerProvider.packetControl[routerProvider.currentHop]
-              ?[element.doneIdx] = element.done;
-        } */
-        //print(routerProvider.packetControl[routerProvider.currentHop]);
+        //if(routerProvider.packetControl[])
+        if (routerProvider.checkPacketControlIsDone()) {
+          if (networkProvider.animate) {
+            networkProvider.toggleAnimate();
+          }
+        }
+
         if (!routerProvider.packetControl[routerProvider.currentHop]!
             .contains(false)) {
-          /* print('Done with current hop');
-          print(routerProvider.packetControl.keys.length);
-          print(routerProvider.packetControl);
-          print(routerProvider.currentHop); */
           if (routerProvider.packetControl.keys.length !=
               routerProvider.currentHop + 1) {
-            /* print('Done with current hop moving to next');
-            print(routerProvider.packetControl);
-            print(routerProvider.animPackets); */
-            routerProvider.currentHop += 1;
+            //routerProvider.currentHop += 1;
+            routerProvider.nextHop();
           }
         }
 

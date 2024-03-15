@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:kademlia2d/models/host.dart';
 import 'package:binary_counter/binary_counter.dart';
 import 'package:kademlia2d/models/packet.dart';
@@ -40,7 +41,12 @@ class NetworkProvider with ChangeNotifier {
 
   void toggleAnimate() {
     animate = !animate;
-    notifyListeners();
+
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
+
+    print("Network Provider:::toggleAnimate after done: $selectedOperation");
   }
 
   void simulateOperation() {

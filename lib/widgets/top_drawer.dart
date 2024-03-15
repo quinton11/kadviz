@@ -1,6 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:kademlia2d/models/packet.dart';
+//import 'package:kademlia2d/providers/network.dart';
+import 'package:kademlia2d/providers/router.dart';
+import 'package:provider/provider.dart';
 
 class TopDrawer extends StatefulWidget {
   final double height;
@@ -12,8 +16,14 @@ class TopDrawer extends StatefulWidget {
 }
 
 class _TopDrawerState extends State<TopDrawer> {
+  late List<APacket> groupedPackets = [];
   @override
   Widget build(BuildContext context) {
+    final routerProvider = Provider.of<RouterProvider>(context);
+    populateCallStack(routerProvider.animPackets, routerProvider.currentHop);
+    //final networkProvider = Provider.of<NetworkProvider>(context);
+    print("TopDrawer:::Current Hop: ${routerProvider.currentHop}");
+    print("Call Stack elements");
     return AnimatedPositioned(
       duration: const Duration(seconds: 2),
       left: 0,
@@ -30,8 +40,13 @@ class _TopDrawerState extends State<TopDrawer> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                HeaderBar(widget: widget),
-                StackDrawer(widget: widget)
+                HeaderBar(
+                    widget: widget, operation: routerProvider.currentOperation),
+                StackDrawer(
+                  widget: widget,
+                  calls: groupedPackets,
+                  currentOperation: routerProvider.currentOperation,
+                )
               ],
             ),
           ),
@@ -39,32 +54,71 @@ class _TopDrawerState extends State<TopDrawer> {
       ),
     );
   }
+
+  void populateCallStack(List<APacket> packets, int currentHop) {
+    groupedPackets.clear();
+    var currentStackPackets =
+        packets.where((packet) => packet.hop <= currentHop).toList();
+
+    currentStackPackets.sort((pktA, pktB) => pktB.hop.compareTo(pktA.hop));
+
+    groupedPackets.addAll(currentStackPackets);
+  }
 }
 
-class StackDrawer extends StatelessWidget {
-  const StackDrawer({
-    super.key,
-    required this.widget,
-  });
+class StackDrawer extends StatefulWidget {
+  const StackDrawer(
+      {super.key,
+      required this.widget,
+      required this.calls,
+      required this.currentOperation});
 
   final TopDrawer widget;
+  final List<APacket> calls;
+  final String currentOperation;
+
+  @override
+  State<StackDrawer> createState() => _StackDrawerState();
+}
+
+class _StackDrawerState extends State<StackDrawer> {
+  late String _selectedIndex = "";
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: widget.width,
-      height: widget.height - 80,
+      width: widget.widget.width,
+      height: widget.widget.height - 80,
       child: DecoratedBox(
           decoration: const BoxDecoration(color: Colors.transparent),
           child: Stack(
             children: [
               Center(
                 child: SizedBox(
-                  height: widget.height - widget.height / 4,
-                  width: widget.width - widget.width / 3,
+                  height: widget.widget.height - widget.widget.height / 4,
+                  width: widget.widget.width - widget.widget.width / 3,
                   child: ListView.separated(
                     itemBuilder: (BuildContext context, int index) {
-                      return const CallStackInfoBar();
+                      var packet = widget.calls[index];
+                      return GestureDetector(
+                        child: CallStackInfoBar(
+                          hop: packet.hop,
+                          src: packet.src,
+                          dest: packet.dest,
+                          paint: packet.pathPaint,
+                          isSelected: _selectedIndex == index.toString(),
+                          currentOperation: widget.currentOperation,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            if (_selectedIndex != index.toString()) {
+                              _selectedIndex = index.toString();
+                              return;
+                            }
+                            _selectedIndex = "";
+                          });
+                        },
+                      );
                     },
                     separatorBuilder: (context, index) {
                       return const SizedBox(
@@ -76,12 +130,12 @@ class StackDrawer extends StatelessWidget {
                                     BorderRadius.all(Radius.circular(8))),
                           ));
                     },
-                    itemCount: 10,
+                    itemCount: widget.calls.length,
                     scrollDirection: Axis.vertical,
                   ),
                 ),
               ),
-              const CallStackCount(),
+              CallStackCount(calls: widget.calls.length),
             ],
           )),
     );
@@ -89,32 +143,50 @@ class StackDrawer extends StatelessWidget {
 }
 
 class CallStackInfoBar extends StatelessWidget {
-  const CallStackInfoBar({
-    super.key,
-  });
+  const CallStackInfoBar(
+      {super.key,
+      required this.hop,
+      required this.src,
+      required this.dest,
+      required this.paint,
+      required this.isSelected,
+      required this.currentOperation});
+
+  final int hop;
+  final String src;
+  final String dest;
+  final Paint paint;
+  final bool isSelected;
+  final String currentOperation;
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
+    return SizedBox(
       height: 50,
       child: DecoratedBox(
         decoration: BoxDecoration(
-            color: Color.fromRGBO(32, 32, 32, 1),
-            borderRadius: BorderRadius.all(Radius.circular(5))),
+            color: const Color.fromRGBO(32, 32, 32, 1),
+            borderRadius: const BorderRadius.all(Radius.circular(5)),
+            border: Border.all(
+                width: 3,
+                color: isSelected
+                    ? paint.color
+                    : const Color.fromRGBO(32, 32, 32, 1))),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             SizedBox(
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                    color: Color.fromRGBO(61, 57, 57, 1),
-                    borderRadius: BorderRadius.all(Radius.circular(3))),
+                    color: paint.color,
+                    borderRadius: const BorderRadius.all(Radius.circular(3))),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0, vertical: 4.0),
                   child: Text(
-                    "FIND-NODE",
-                    style: TextStyle(
-                        color: Color.fromARGB(255, 84, 178, 232),
+                    currentOperation.toUpperCase(),
+                    style: const TextStyle(
+                        color: Colors.white,
                         fontFamily: 'RobotoMono',
                         fontSize: 16,
                         fontWeight: FontWeight.bold),
@@ -123,8 +195,8 @@ class CallStackInfoBar extends StatelessWidget {
               ),
             ),
             Text(
-              "/{id}/PING",
-              style: TextStyle(
+              "/$dest/PING",
+              style: const TextStyle(
                   color: Color.fromARGB(255, 84, 178, 232),
                   fontFamily: 'RobotoMono',
                   fontSize: 14,
@@ -132,11 +204,21 @@ class CallStackInfoBar extends StatelessWidget {
             ),
             SourceTargetCard(
               type: "Source",
-              id: "0001",
+              id: src,
+              paint: paint,
             ),
             SourceTargetCard(
               type: "Target",
-              id: "0011",
+              id: dest,
+              paint: paint,
+            ),
+            Text(
+              "HOP - $hop",
+              style: const TextStyle(
+                  color: Color.fromARGB(255, 84, 178, 232),
+                  fontFamily: 'RobotoMono',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -146,14 +228,12 @@ class CallStackInfoBar extends StatelessWidget {
 }
 
 class SourceTargetCard extends StatelessWidget {
-  const SourceTargetCard({
-    super.key,
-    required this.type,
-    required this.id,
-  });
+  const SourceTargetCard(
+      {super.key, required this.type, required this.id, required this.paint});
 
   final String type;
   final String id;
+  final Paint paint;
 
   @override
   Widget build(BuildContext context) {
@@ -166,15 +246,15 @@ class SourceTargetCard extends StatelessWidget {
           Text(
             "$type:",
             style: const TextStyle(
-                color: Color.fromARGB(255, 54, 168, 35),
+                color: Colors.white,
                 fontFamily: 'RobotoMono',
                 fontSize: 14,
                 fontWeight: FontWeight.bold),
           ),
           Text(
             id,
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: paint.color,
                 fontFamily: 'RobotoMono',
                 fontSize: 15,
                 fontWeight: FontWeight.bold),
@@ -186,23 +266,23 @@ class SourceTargetCard extends StatelessWidget {
 }
 
 class CallStackCount extends StatelessWidget {
-  const CallStackCount({
-    super.key,
-  });
+  const CallStackCount({super.key, required this.calls});
+
+  final int calls;
 
   @override
   Widget build(BuildContext context) {
-    return const Positioned(
+    return Positioned(
       bottom: 5,
       left: 5,
       child: Padding(
-        padding: EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(8.0),
         child: SizedBox(
           height: 40,
           width: 100,
           child: Row(
             children: [
-              Text(
+              const Text(
                 "Calls",
                 style: TextStyle(
                     color: Color.fromARGB(255, 84, 178, 232),
@@ -216,7 +296,7 @@ class CallStackCount extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 3,
                       height: 3,
                       child: DecoratedBox(
@@ -227,8 +307,8 @@ class CallStackCount extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "3",
-                      style: TextStyle(
+                      "$calls",
+                      style: const TextStyle(
                         color: Color.fromARGB(255, 54, 168, 35),
                         fontFamily: 'RobotoMono',
                         fontSize: 15,
@@ -249,23 +329,25 @@ class HeaderBar extends StatelessWidget {
   const HeaderBar({
     super.key,
     required this.widget,
+    required this.operation,
   });
 
   final TopDrawer widget;
+  final String operation;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: widget.width,
       height: 50,
-      child: const DecoratedBox(
-        decoration: BoxDecoration(
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
           color: Colors.transparent,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Text(
+            const Text(
               "RPC Call Stack",
               style: TextStyle(
                   color: Color.fromARGB(255, 84, 178, 232),
@@ -274,8 +356,8 @@ class HeaderBar extends StatelessWidget {
                   fontWeight: FontWeight.bold),
             ),
             Text(
-              "FIND RESOURCE",
-              style: TextStyle(
+              operation.toUpperCase(),
+              style: const TextStyle(
                   fontFamily: "RobotoMono",
                   color: Color.fromARGB(255, 54, 168, 35),
                   fontWeight: FontWeight.bold),
