@@ -6,6 +6,7 @@ import 'package:kademlia2d/models/packet.dart';
 import 'package:kademlia2d/providers/network.dart';
 import 'package:provider/provider.dart';
 import 'package:kademlia2d/providers/router.dart';
+import 'package:kademlia2d/utils/constants.dart';
 
 class RouterCanvas extends StatefulWidget {
   final double height;
@@ -51,13 +52,9 @@ class _RouterCanvasState extends State<RouterCanvas>
   @override
   void initState() {
     super.initState();
-    /*  Duration duration = const Duration(milliseconds: 1000 ~/ 60);
-    timer = Timer.periodic(duration, (timer) {}); */
     _ticker = createTicker((elapsed) {
       setState(() {
         for (var element in packets) {
-          // check for current hop
-          //update elements in current hop
           if (element.hop == currentHop) {
             element.update(elapsed);
           }
@@ -73,11 +70,7 @@ class _RouterCanvasState extends State<RouterCanvas>
   }
 
   void startTimer() {
-    //called to start timer
-    //if timer is already started then skip else initialize timer
-    //print('Start Timer');
     if (_ticker.isActive) {
-      //print('isactive');
       return;
     }
 
@@ -86,10 +79,7 @@ class _RouterCanvasState extends State<RouterCanvas>
 
   void cancelTimer() {
     if (_ticker.isActive) {
-      //print('Cancelling timer...');
-      //timer.cancel();
       _ticker.stop();
-      //print('Cancelled timer...');
     }
   }
 }
@@ -113,43 +103,16 @@ class RouterPainter extends CustomPainter {
         ? drawSpecificTree(canvas, size)
         : drawTree(canvas, size);
 
-    if (networkProvider.animate) {
-      networkProvider.simulateOperation();
-      routerProvider.setAnimationPath(networkProvider.animPaths);
+    switch (networkProvider.animationOption) {
+      case (singleOperationAnimation):
+        animateOperation(canvas);
+        break;
+      case (singlePacketAnimation):
+        animatePacket(canvas);
+        break;
 
-      for (var element in routerProvider.animPackets) {
-        element.draw(canvas);
-        //print(routerProvider.currentHop);
-        //print(element.hop);
-        if (element.hop != routerProvider.currentHop) {
-          continue;
-        }
-        routerProvider.packetControl[routerProvider.currentHop]
-            ?[element.doneIdx] = element.done;
-
-        //if(routerProvider.packetControl[])
-        if (routerProvider.checkPacketControlIsDone()) {
-          if (networkProvider.animate) {
-            networkProvider.toggleAnimate();
-          }
-        }
-
-        if (!routerProvider.packetControl[routerProvider.currentHop]!
-            .contains(false)) {
-          if (routerProvider.packetControl.keys.length !=
-              routerProvider.currentHop + 1) {
-            //routerProvider.currentHop += 1;
-            routerProvider.nextHop();
-          }
-        }
-
-        /* print('Element hop: ${element.hop}');
-        print('Element idx in hop: ${element.doneIdx}'); */
-      }
-
-      startTimer();
-    } else {
-      cancelTimer();
+      default:
+        cancelTimer();
     }
   }
 
@@ -176,5 +139,45 @@ class RouterPainter extends CustomPainter {
 
     routerProvider.drawSpecificTree(
         paint, canvas, networkProvider.activeHostBucketIds);
+  }
+
+  void animateOperation(Canvas canvas) {
+    networkProvider.simulateOperation();
+    routerProvider.setAnimationPath(networkProvider.animPaths);
+
+    for (var element in routerProvider.animPackets) {
+      element.draw(canvas);
+
+      if (element.hop != routerProvider.currentHop) {
+        continue;
+      }
+      routerProvider.packetControl[routerProvider.currentHop]
+          ?[element.doneIdx] = element.done;
+
+      //if(routerProvider.packetControl[])
+      if (routerProvider.checkPacketControlIsDone()) {
+        if (networkProvider.animate) {
+          networkProvider.toggleAnimate();
+        }
+      }
+
+      if (!routerProvider.packetControl[routerProvider.currentHop]!
+          .contains(false)) {
+        if (routerProvider.packetControl.keys.length !=
+            routerProvider.currentHop + 1) {
+          routerProvider.nextHop();
+        }
+      }
+    }
+
+    startTimer();
+  }
+
+  void animatePacket(Canvas canvas) {
+    routerProvider.getCurrentPacket().draw(canvas);
+    if (routerProvider.getCurrentPacket().done) {
+      networkProvider.toggleAnimate();
+    }
+    startTimer();
   }
 }

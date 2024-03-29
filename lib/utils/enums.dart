@@ -8,4 +8,3 @@ enum RPCResponse {
   bootNodeConverge,
   wrongDest,
 }
-

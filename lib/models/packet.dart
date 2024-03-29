@@ -161,4 +161,12 @@ class APacket {
       canvas.drawLine(Offset(from.x, from.y), Offset(to.x, to.y), paint);
     }
   }
+
+  void resetPacket() {
+    currentPath = 0;
+    done = false;
+    Vector2 from = paths[currentPath]["from"] as Vector2;
+    pos.x = from.x;
+    pos.y = from.y;
+  }
 }

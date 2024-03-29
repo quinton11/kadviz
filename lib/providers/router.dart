@@ -24,6 +24,7 @@ class RouterProvider extends ChangeNotifier {
   double canvasHeight = 0;
   bool routerSet = false;
   String currentOperation = '';
+  int currentPacket = 0;
   Path pathToDraw = parseSvgPathData(
       'M455.5,348H447V99.5c0-17.369-14.131-31.5-31.5-31.5h-368C30.131,68,16,82.131,16,99.5V348H7.5c-4.142,0-7.5,3.358-7.5,7.5v16C0,384.458,10.542,395,23.5,395h416c12.958,0,23.5-10.542,23.5-23.5v-16C463,351.358,459.642,348,455.5,348z M31,99.5C31,90.402,38.402,83,47.5,83h368c9.098,0,16.5,7.402,16.5,16.5V348H31V99.5zM448,371.5c0,4.687-3.813,8.5-8.5,8.5h-416c-4.687,0-8.5-3.813-8.5-8.5V363h169.025c-0.011,0.166-0.025,0.331-0.025,0.5c0,4.142,3.358,7.5,7.5,7.5h80c4.142,0,7.5-3.358,7.5-7.5c0-0.169-0.014-0.334-0.025-0.5H448V371.5z');
 
@@ -49,6 +50,15 @@ class RouterProvider extends ChangeNotifier {
     canvasHeight = cH;
     networkSize = netSize;
     setRoutingTree(netSize);
+  }
+
+  void setActivePacket(String src, String dest, int hop) {
+    var idx = getAnimPacketIndex(src, dest, hop);
+    currentPacket = idx;
+  }
+
+  APacket getCurrentPacket() {
+    return animPackets[currentPacket];
   }
 
   void setCurrentOperation(String op) {
@@ -308,6 +318,8 @@ class RouterProvider extends ChangeNotifier {
     textPainter.paint(canvas, Offset(xCenter, yCenter));
   }
 
+// add the respomse to the paths object
+// then pass it to the packet, along with added meta information
   void setAnimationPath(Map<int, List<Map<String, String>>> paths) {
     if (animPackets.isNotEmpty) {
       return;
@@ -430,5 +442,15 @@ class RouterProvider extends ChangeNotifier {
     packetControl.clear();
     stackPaths.clear();
     currentHop = 0;
+  }
+
+  int getAnimPacketIndex(String src, String dest, int hop) {
+    return animPackets.indexOf(animPackets.firstWhere(
+        (pkt) => pkt.src == src && pkt.dest == dest && pkt.hop == hop));
+  }
+
+  void resetPacket() {
+    animPackets[currentPacket].resetPacket();
+    currentHop = animPackets[currentPacket].hop;
   }
 }

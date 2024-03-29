@@ -2,9 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/models/packet.dart';
-//import 'package:kademlia2d/providers/network.dart';
+import 'package:kademlia2d/providers/network.dart';
 import 'package:kademlia2d/providers/router.dart';
 import 'package:provider/provider.dart';
+import 'package:kademlia2d/utils/constants.dart';
 
 class TopDrawer extends StatefulWidget {
   final double height;
@@ -20,8 +21,10 @@ class _TopDrawerState extends State<TopDrawer> {
   @override
   Widget build(BuildContext context) {
     final routerProvider = Provider.of<RouterProvider>(context);
-    populateCallStack(routerProvider.animPackets, routerProvider.currentHop);
-    //final networkProvider = Provider.of<NetworkProvider>(context);
+    final networkProvider =
+        Provider.of<NetworkProvider>(context, listen: false);
+    populateCallStack(routerProvider.animPackets, routerProvider.currentHop,
+        networkProvider.animationOption);
     print("TopDrawer:::Current Hop: ${routerProvider.currentHop}");
     print("Call Stack elements");
     return AnimatedPositioned(
@@ -40,12 +43,14 @@ class _TopDrawerState extends State<TopDrawer> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                HeaderBar(
-                    widget: widget, operation: routerProvider.currentOperation),
+                HeaderBar(widget: widget),
                 StackDrawer(
                   widget: widget,
                   calls: groupedPackets,
                   currentOperation: routerProvider.currentOperation,
+                  resetPacket: routerProvider.resetPacket,
+                  setCurrentPacket: routerProvider.setActivePacket,
+                  currentHop: routerProvider.currentHop,
                 )
               ],
             ),
@@ -55,7 +60,9 @@ class _TopDrawerState extends State<TopDrawer> {
     );
   }
 
-  void populateCallStack(List<APacket> packets, int currentHop) {
+  void populateCallStack(
+      List<APacket> packets, int currentHop, String animationOption) {
+    if (animationOption != singleOperationAnimation) return;
     groupedPackets.clear();
     var currentStackPackets =
         packets.where((packet) => packet.hop <= currentHop).toList();
@@ -71,21 +78,30 @@ class StackDrawer extends StatefulWidget {
       {super.key,
       required this.widget,
       required this.calls,
-      required this.currentOperation});
+      required this.currentOperation,
+      required this.resetPacket,
+      required this.setCurrentPacket,
+      required this.currentHop});
 
   final TopDrawer widget;
   final List<APacket> calls;
   final String currentOperation;
-
+  final Function resetPacket;
+  final Function setCurrentPacket;
+  final int currentHop;
   @override
   State<StackDrawer> createState() => _StackDrawerState();
 }
 
 class _StackDrawerState extends State<StackDrawer> {
   late String _selectedIndex = "";
+  late bool _callStackInfoSelected = false;
+  late String srcId = "";
+  late String destId = "";
 
   @override
   Widget build(BuildContext context) {
+    final networkProvider = Provider.of<NetworkProvider>(context);
     return SizedBox(
       width: widget.widget.width,
       height: widget.widget.height - 80,
@@ -107,12 +123,23 @@ class _StackDrawerState extends State<StackDrawer> {
                           dest: packet.dest,
                           paint: packet.pathPaint,
                           isSelected: _selectedIndex == index.toString(),
-                          currentOperation: widget.currentOperation,
+                          currentOperation: networkProvider.selectedOperation,
                         ),
                         onTap: () {
                           setState(() {
                             if (_selectedIndex != index.toString()) {
+                              if (networkProvider.animate) return;
                               _selectedIndex = index.toString();
+                              widget.setCurrentPacket(
+                                  packet.src, packet.dest, packet.hop);
+                              widget.resetPacket();
+                              srcId = packet.src;
+                              destId = packet.dest;
+                              networkProvider.singlePacketAnimate();
+
+                              // pop open dialogue box
+                              _callStackInfoSelected = true;
+
                               return;
                             }
                             _selectedIndex = "";
@@ -136,6 +163,19 @@ class _StackDrawerState extends State<StackDrawer> {
                 ),
               ),
               CallStackCount(calls: widget.calls.length),
+              if (_callStackInfoSelected)
+                CallStackPopUpBox(
+                    height: widget.widget.height,
+                    width: widget.widget.width,
+                    operation: networkProvider.selectedOperation,
+                    triggerClose: () {
+                      setState(() {
+                        _callStackInfoSelected = false;
+                      });
+                    },
+                    srcId: srcId,
+                    destId: destId,
+                    hop: widget.currentHop)
             ],
           )),
     );
@@ -329,14 +369,13 @@ class HeaderBar extends StatelessWidget {
   const HeaderBar({
     super.key,
     required this.widget,
-    required this.operation,
   });
 
   final TopDrawer widget;
-  final String operation;
 
   @override
   Widget build(BuildContext context) {
+    final networkProvider = Provider.of<NetworkProvider>(context);
     return SizedBox(
       width: widget.width,
       height: 50,
@@ -356,13 +395,387 @@ class HeaderBar extends StatelessWidget {
                   fontWeight: FontWeight.bold),
             ),
             Text(
-              operation.toUpperCase(),
+              networkProvider.selectedOperation.toUpperCase(),
               style: const TextStyle(
                   fontFamily: "RobotoMono",
                   color: Color.fromARGB(255, 54, 168, 35),
                   fontWeight: FontWeight.bold),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class CallStackPopUpBox extends StatelessWidget {
+  const CallStackPopUpBox(
+      {super.key,
+      required this.height,
+      required this.width,
+      required this.operation,
+      required this.triggerClose,
+      required this.srcId,
+      required this.destId,
+      required this.hop});
+
+  final double height;
+  final double width;
+  final String operation;
+  final Function triggerClose;
+  final String srcId;
+  final String destId;
+  final int hop;
+
+  @override
+  Widget build(BuildContext context) {
+    final mainWidth = width - width / 2;
+    return Center(
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+          child: DecoratedBox(
+            decoration:
+                const BoxDecoration(color: Color.fromRGBO(13, 6, 6, 0.5)),
+            child: Center(
+              child: SizedBox(
+                height: height,
+                width: mainWidth,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                      color: Colors.black,
+                      border: Border.all(
+                        color: const Color.fromARGB(255, 84, 178, 232),
+                        width: 2,
+                      )),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: mainWidth,
+                        height: 50,
+                        child: DecoratedBox(
+                          decoration:
+                              const BoxDecoration(color: Colors.transparent),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(operation,
+                                    style: const TextStyle(
+                                        color:
+                                            Color.fromARGB(255, 84, 178, 232),
+                                        fontFamily: 'RobotoMono',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold)),
+                                IconButton(
+                                    onPressed: () {
+                                      triggerClose();
+                                    },
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: Color.fromARGB(255, 84, 178, 232),
+                                    ))
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: DecoratedBox(
+                          decoration:
+                              const BoxDecoration(color: Colors.transparent),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              RequestBox(
+                                srcId: srcId,
+                                destId: destId,
+                              ),
+                              const VerticalDivider(
+                                width: 5,
+                                indent: 7,
+                                endIndent: 7,
+                                thickness: 2,
+                                color: Color.fromARGB(255, 84, 178, 232),
+                              ),
+                              ResponseBox(destId: destId, hop: hop),
+                            ],
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RequestBox extends StatelessWidget {
+  const RequestBox({super.key, required this.srcId, required this.destId});
+
+  final String srcId;
+  final String destId;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 350,
+      height: 400,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: Colors.transparent),
+        child: Padding(
+          padding: const EdgeInsets.all(6.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 320,
+                height: 150,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                      color: Colors.transparent),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: Row(
+                            children: [
+                              const Text(
+                                "src:",
+                                style: TextStyle(
+                                    fontFamily: "RobotoMono",
+                                    color: Color.fromARGB(255, 84, 178, 232),
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Text(
+                                srcId,
+                                style: const TextStyle(
+                                    fontFamily: "RobotoMono",
+                                    color: Color.fromARGB(255, 54, 168, 35),
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: 320,
+                height: 150,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                      color: Colors.transparent),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: Row(
+                            children: [
+                              const Text(
+                                "dest:",
+                                style: TextStyle(
+                                    fontFamily: "RobotoMono",
+                                    color: Color.fromARGB(255, 84, 178, 232),
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(
+                                width: 10,
+                              ),
+                              Text(
+                                destId,
+                                style: const TextStyle(
+                                    fontFamily: "RobotoMono",
+                                    color: Color.fromARGB(255, 54, 168, 35),
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ignore: must_be_immutable
+class ResponseBox extends StatelessWidget {
+  ResponseBox({super.key, required this.destId, required this.hop});
+  final String destId;
+  final int hop;
+
+  late List<String> responseData = [];
+  late Map<String, bool> responseVisited = {};
+
+  void populateResponseData(int currentHop,
+      Map<int, List<Map<String, Map<String, bool>>>> destResponse) {
+    var hopResponses = destResponse[currentHop];
+    if (hopResponses == null) return;
+    Map<String, Map<String, bool>>? foundResponse = hopResponses.firstWhere(
+        (map) => map.containsKey(destId),
+        orElse: () => <String, Map<String, bool>>{});
+
+    if (foundResponse.containsKey(destId)) {
+      responseVisited = foundResponse[destId]!;
+      responseData.addAll(foundResponse[destId]!.keys);
+      print(responseData);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final networkProvider =
+        Provider.of<NetworkProvider>(context, listen: false);
+    final bool noResponseData = networkProvider.destResponse.isEmpty;
+    if (!noResponseData) {
+      populateResponseData(hop, networkProvider.destResponse);
+    }
+
+    return SizedBox(
+      width: 520,
+      height: 400,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(color: Colors.transparent),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SizedBox(
+                width: 500,
+                height: 20,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      networkProvider.nodeInQuestion,
+                      style: const TextStyle(
+                          fontFamily: "RobotoMono",
+                          color: Color.fromRGBO(54, 168, 35, 1),
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      "nearest k nodes",
+                      style: TextStyle(
+                          color: Color.fromARGB(255, 84, 178, 232),
+                          fontFamily: "RobotoMono",
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 500,
+                height: 280,
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(6)),
+                      color: Colors.transparent),
+                  child: noResponseData
+                      ? const Center(
+                          child: Text(
+                            "No Response data",
+                            style: TextStyle(
+                                fontFamily: "RobotoMono",
+                                color: Color.fromRGBO(54, 168, 35, 0.5),
+                                fontWeight: FontWeight.bold),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ListView.separated(
+                              itemBuilder: (BuildContext context, int index) {
+                                var id = responseData[index];
+                                var visited = responseVisited[id];
+                                return SizedBox(
+                                  height: 30,
+                                  child: DecoratedBox(
+                                    decoration: const BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                            color: Color.fromRGBO(
+                                                54, 168, 35, 0.5),
+                                            width: 1),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          id,
+                                          style: TextStyle(
+                                              fontFamily: "RobotoMono",
+                                              color: visited!
+                                                  ? const Color.fromRGBO(
+                                                      54, 168, 35, 0.5)
+                                                  : const Color.fromRGBO(
+                                                      54, 168, 35, 1),
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                        Text(
+                                          visited ? "Visited" : "Not Visited",
+                                          style: TextStyle(
+                                              fontFamily: "RobotoMono",
+                                              color: visited
+                                                  ? const Color.fromRGBO(
+                                                      54, 168, 35, 0.5)
+                                                  : const Color.fromRGBO(
+                                                      54, 168, 35, 1),
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              separatorBuilder: (BuildContext ctx, int index) {
+                                return const SizedBox(
+                                    height: 10,
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                          color: Colors.transparent,
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(8))),
+                                    ));
+                              },
+                              itemCount: responseData.length)),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

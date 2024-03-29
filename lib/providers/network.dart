@@ -20,6 +20,7 @@ class NetworkProvider with ChangeNotifier {
   late bool animate = false;
   late bool simulate = false;
   late Map<int, List<Map<String, String>>> animPaths = {};
+  late Map<int, List<Map<String, Map<String, bool>>>> destResponse = {};
   late List<String> operations = const [
     swarmBOOTNODE,
     swarmtSTORE,
@@ -35,18 +36,36 @@ class NetworkProvider with ChangeNotifier {
   late List<String> formats = const ['DHT (ipfs)', 'DISC (swarm)'];
   late String selectedOperation = 'Default';
   late String selectedFormat = formats[0];
+  late String animationOption = 'Default';
+  late String nodeInQuestion = '';
   NetworkProvider() {
     populateHosts();
   }
 
   void toggleAnimate() {
     animate = !animate;
+    if (animate) {
+      animationOption = singleOperationAnimation;
+    } else {
+      animationOption = 'Default';
+    }
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       notifyListeners();
     });
 
     print("Network Provider:::toggleAnimate after done: $selectedOperation");
+  }
+
+  void singlePacketAnimate() {
+    animate = true;
+    animationOption = singlePacketAnimation;
+
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
+
+    print("Network Provider:::singlePacketAnimate");
   }
 
   void simulateOperation() {
@@ -68,14 +87,17 @@ class NetworkProvider with ChangeNotifier {
         simulatePing();
     }
     simulate = true;
+    animationOption = singleOperationAnimation;
   }
 
   void setOperation(String op) {
     selectedOperation = op;
     simulate = false;
     animPaths.clear();
+    destResponse.clear();
   }
 
+// add extra info to the animPaths
   void simulatePing() {
     final random = Random();
     String srcId = _hostIds[random.nextInt(_hostIds.length)];
@@ -90,8 +112,20 @@ class NetworkProvider with ChangeNotifier {
     }
     animPaths[0] = [];
     animPaths[0]!.add({"src": srcId, "dest": destId});
+    nodeInQuestion = destId;
   }
 
+  Map<String, bool> createResponseMap(List<String> listA, List<String> listB) {
+    var resultMap = <String, bool>{};
+
+    for (var strB in listB) {
+      resultMap[strB] = listA.contains(strB);
+    }
+
+    return resultMap;
+  }
+
+//add extra info to the animPaths
   void simulateFindNode() {
     // get src
     final random = Random();
@@ -119,6 +153,7 @@ class NetworkProvider with ChangeNotifier {
     print('Source: $srcId');
     print('Node to find $nodeToFind');
     print('Bucket Ids: $bucketIds');
+    nodeInQuestion = nodeToFind;
     List<String> visitedNode = [];
     visitedNode.add(srcId);
     //run loop of checking for nodes till convergence
@@ -155,6 +190,7 @@ class NetworkProvider with ChangeNotifier {
       // set current hop
       currentHop += 1;
       // if not create current hop, add src and dest keys to current hop
+      destResponse[currentHop - 1] = [];
       if (currentHop != 0) {
         final closeNodes = [];
         List<dynamic> nextNodes = [];
@@ -164,6 +200,10 @@ class NetworkProvider with ChangeNotifier {
           print('');
           print('Dest Node: $v  close nodes: $nextNodes');
           print('');
+          // Add response, which is nextNodes for request to destNode
+          List<String> nextNodesConvert = List<String>.from(nextNodes);
+          var responseMap = createResponseMap(visitedNode, nextNodesConvert);
+          destResponse[currentHop - 1]!.add({v: responseMap});
           closeNodes.addAll(nextNodes);
         }
         destNodes = closeNodes.toSet().toList();
@@ -172,6 +212,8 @@ class NetworkProvider with ChangeNotifier {
 
     print('Anim Paths!!!');
     print(animPaths);
+    print('Dest nodes and their responses!!!');
+    print(destResponse);
   }
 
   /// Generates random nodes to populate network

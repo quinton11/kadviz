@@ -51,7 +51,7 @@ class _RightDrawerState extends State<RightDrawer> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
                       Text(
-                        'Select Operation - ${_selected}',
+                        'Select Operation - $_selected',
                         style: const TextStyle(
                           color: Color.fromARGB(255, 84, 178, 232),
                           fontFamily: "RobotoMono",
