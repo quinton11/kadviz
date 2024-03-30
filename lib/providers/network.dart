@@ -169,6 +169,7 @@ class NetworkProvider with ChangeNotifier {
       final contains =
           destNodes.where((element) => !visitedNode.contains(element)).toList();
       print('Nodes not visited $contains');
+      if (visitedNode.contains(nodeToFind)) break;
       if (contains.isEmpty) {
         //converged, return list of hops
         converged = true;
@@ -179,6 +180,13 @@ class NetworkProvider with ChangeNotifier {
       //add to anim object
       for (final v in contains) {
         //path[currentHop].add({"src": srcId, "dest": v});
+        var srcHost = hosts.firstWhere((element) => element.id == srcId);
+        var destHost = hosts.firstWhere((element) => element.id == v);
+        print("*******************************************************");
+        print("Source K-Buckets: ${srcHost.kBuckets}");
+        print("Destination K-Buckets: ${destHost.kBuckets}");
+        print("*******************************************************");
+
         animPaths[currentHop]!.add({"src": srcId, "dest": v});
         print('HOP: $currentHop src: $srcId, "dest": $v');
       }
@@ -193,19 +201,30 @@ class NetworkProvider with ChangeNotifier {
       destResponse[currentHop - 1] = [];
       if (currentHop != 0) {
         final closeNodes = [];
+        var nodeFound = false;
         List<dynamic> nextNodes = [];
-        for (var v in destNodes) {
-          Host dst = getHostFromId(v);
-          (nextNodes, _) = dst.bucketCloseNess(nodeToFind);
-          print('');
-          print('Dest Node: $v  close nodes: $nextNodes');
-          print('');
-          // Add response, which is nextNodes for request to destNode
-          List<String> nextNodesConvert = List<String>.from(nextNodes);
-          var responseMap = createResponseMap(visitedNode, nextNodesConvert);
-          destResponse[currentHop - 1]!.add({v: responseMap});
-          closeNodes.addAll(nextNodes);
+
+        // if node is found, it should be the last request made
+        if (destNodes.contains(nodeToFind)) {
+          closeNodes.add(nodeToFind);
+          nodeFound = true;
         }
+
+        if (!nodeFound) {
+          for (var v in destNodes) {
+            Host dst = getHostFromId(v);
+            (nextNodes, _) = dst.bucketCloseNess(nodeToFind);
+            print('');
+            print('Dest Node: $v  close nodes: $nextNodes');
+            print('');
+            // Add response, which is nextNodes for request to destNode
+            List<String> nextNodesConvert = List<String>.from(nextNodes);
+            var responseMap = createResponseMap(visitedNode, nextNodesConvert);
+            destResponse[currentHop - 1]!.add({v: responseMap});
+            closeNodes.addAll(nextNodes);
+          }
+        }
+
         destNodes = closeNodes.toSet().toList();
       }
     }
@@ -391,6 +410,9 @@ class NetworkProvider with ChangeNotifier {
     print('Close nodes: ${resPacket.data}');
     print("==============================================");
     print(resPacket.res.toString());
+
+    // add bootnode to src kbuckets
+    src.populateBucket(dest.id);
 
     //populate node with returned bucket
     for (var cn in resPacket.data) {

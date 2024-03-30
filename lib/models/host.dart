@@ -58,7 +58,8 @@ class Host {
     if (exists) return true;
 
     kBuckets[bucketId]!.add(idk);
-    //print('Adding node to bucket');
+    print('Adding node to bucket');
+    print(kBuckets);
 
     return false;
   }
@@ -75,10 +76,10 @@ class Host {
     kBuckets.keys.toList(growable: false).forEach((key) {
       List<String> ids = kBuckets[key] as List<String>;
       for (var idk in ids) {
-        if (idk != i) {
-          final closeness = int.parse(idk, radix: 2) ^ int.parse(i, radix: 2);
-          closeNess.addAll({idk: closeness});
-        }
+        //if (idk != i) {
+        final closeness = int.parse(idk, radix: 2) ^ int.parse(i, radix: 2);
+        closeNess.addAll({idk: closeness});
+        //}
       }
     });
 
@@ -91,7 +92,11 @@ class Host {
     LinkedHashMap sortedMap = LinkedHashMap.fromIterable(sortedKeys,
         key: (k) => k, value: (k) => closeNess[k]);
 
-    final kClosest = sortedMap.keys.toList().take(k).toList();
+    final sortedMapTolist = sortedMap.keys.toList();
+    print(
+        "Bucket of $id, these are the nodes I have closest to $i: $sortedMapTolist");
+
+    final kClosest = sortedMapTolist.take(k).toList();
 
     return (kClosest, false);
   }
