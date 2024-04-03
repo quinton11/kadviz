@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:kademlia2d/models/branch.dart';
 import 'package:kademlia2d/models/node.dart';
 import 'package:kademlia2d/models/packet.dart';
+import 'package:kademlia2d/utils/constants.dart';
 import 'package:vector_math/vector_math.dart' as vmath;
 import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
@@ -320,10 +321,24 @@ class RouterProvider extends ChangeNotifier {
 
 // add the respomse to the paths object
 // then pass it to the packet, along with added meta information
-  void setAnimationPath(Map<int, List<Map<String, String>>> paths) {
+  void setAnimationPath(
+      Map<int, List<Map<String, String>>> paths, String operation) {
+    // use switch case to check if dht or swarm, then run respective animation
+    //algorithms
     if (animPackets.isNotEmpty) {
       return;
     }
+    switch (operation) {
+      case (dhtFormat):
+        dhtSetAnimationPath(paths);
+      case (swarmFormat):
+        swarmSetAnimationPath(paths);
+    }
+
+    print("PACKET CONTROL $packetControl");
+  }
+
+  void dhtSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
     print('Animating..');
     print(paths);
     stackPaths = paths;
@@ -358,6 +373,82 @@ class RouterProvider extends ChangeNotifier {
             dest: p["dest"] as String));
         print(animPackets.length);
         doneid += 1;
+        animPaths.clear();
+      }
+    }
+  }
+
+  void swarmSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
+    print('Animating..');
+    print(paths);
+    stackPaths = paths;
+
+    //get keys in map
+    //loop through keys
+    // for each key get the length of the paths
+    //initialize a false done array for each hop with length equal to the length src dest pairs
+    final keys = paths.keys.toList();
+    for (var k in keys) {
+      final path = paths[k] as List<Map<String, String>>;
+      List<bool> done = List.filled(path.length, false);
+      packetControl.addAll({k: done});
+      int doneid = 0;
+
+      //for each path create a sourceToDest to simulate a request response
+      //src to destination
+
+      /* 
+        What we can do is this,
+        - In this, there are no "dest" to "src" responses
+        - Responses are treated as request, hence we create packets for each request
+        - So say we have 3 hops, since each response is treated as a request, in actual fact,
+          we'll have 3*2 hops. So we   */
+      for (var p in path) {
+        //request
+        sourceToDest(p["src"] as String, p["dest"] as String);
+
+        vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
+        animPackets.add(APacket(
+            pos: vmath.Vector2(st.x, st.y),
+            paths: [...animPaths],
+            hop: k,
+            doneIdx: doneid,
+            src: p["src"] as String,
+            dest: p["dest"] as String));
+        print(animPackets.length);
+        doneid += 1;
+        animPaths.clear();
+      }
+    }
+
+    // reversal or response
+    final keyOrder = (keys.length * 2) - 1;
+    for (int i = keys.length - 1; i >= 0; i--) {
+      var k = keys[i];
+      final path = paths[k] as List<Map<String, String>>;
+      List<bool> done = List.filled(path.length, false);
+      final hop = keyOrder - k;
+      packetControl.addAll({hop: done});
+      /* 3*2 = 6, since its counting down, and say the max key is 2 and min 0 we can do 
+       - 6-1 - 2 == 5-2 =3
+       - 6-1 - 1 == 5 -1 = 4
+       - 6-1-0 == 5-0 = 5 */
+      int doneId = 0;
+
+      for (var p in path) {
+        //response
+        sourceToDest(p["dest"] as String, p["src"] as String);
+
+        vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
+        animPackets.add(APacket(
+            pos: vmath.Vector2(st.x, st.y),
+            paths: [...animPaths],
+            hop: hop,
+            doneIdx: doneId,
+            src: p["dest"] as String,
+            dest: p["src"] as String));
+        print(animPackets.length);
+        doneId += 1;
         animPaths.clear();
       }
     }

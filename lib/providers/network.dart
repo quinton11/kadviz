@@ -25,7 +25,7 @@ class NetworkProvider with ChangeNotifier {
     swarmBOOTNODE,
     swarmtSTORE,
     swarmRETRIEVE,
-    swarmPING
+    swarmFINDNODE
   ];
   late List<String> dhtOperations = const [
     dhtPING,
@@ -33,7 +33,7 @@ class NetworkProvider with ChangeNotifier {
     dhtFINDVALUE,
     dhtSTORE
   ];
-  late List<String> formats = const ['DHT (ipfs)', 'DISC (swarm)'];
+  late List<String> formats = const [dhtFormat, swarmFormat];
   late String selectedOperation = 'Default';
   late String selectedFormat = formats[0];
   late String animationOption = 'Default';
@@ -85,6 +85,9 @@ class NetworkProvider with ChangeNotifier {
       case dhtSTORE:
         print(dhtSTORE);
         simulatePing();
+      case swarmFINDNODE:
+        print(swarmFINDNODE);
+        simulateSwarmFindNode();
     }
     simulate = true;
     animationOption = singleOperationAnimation;
@@ -162,6 +165,10 @@ class NetworkProvider with ChangeNotifier {
     (destNodes, _) = h.bucketCloseNess(nodeToFind);
     print('Dest Nodes: $destNodes');
 
+    if (destNodes.contains(nodeToFind)) {
+      destNodes = [nodeToFind];
+    }
+
     bool converged = false;
     int currentHop = 0;
 
@@ -233,6 +240,90 @@ class NetworkProvider with ChangeNotifier {
     print(animPaths);
     print('Dest nodes and their responses!!!');
     print(destResponse);
+  }
+
+  void simulateSwarmFindNode() {
+    // Generate src and node to find
+    print("=================== SIMULATE SWARM FIND NODE ==================");
+    // get src
+    final random = Random();
+    String srcId = _hostIds[random.nextInt(_hostIds.length)];
+    String nodeToFind = '';
+    bool unique = false;
+    Host h = getHostFromId(srcId);
+    List<String> bucketIds = h.getBucketIds();
+    int count = 0;
+    while (!unique) {
+      String id = _hostIds[random.nextInt(_hostIds.length)];
+      if (count > 6) {
+        nodeToFind = id;
+        break;
+      }
+      if (bucketIds.contains(id) || id == srcId) {
+        count += 1;
+        continue;
+      }
+
+      nodeToFind = id;
+      unique = true;
+    }
+    // get node to find
+    print('Source: $srcId');
+    print('Node to find $nodeToFind');
+    print('Bucket Ids: $bucketIds');
+    nodeInQuestion = nodeToFind;
+
+    int currentHop = 0;
+    List<String> visitedNodes = [];
+    recursiveRequests(visitedNodes, srcId, nodeToFind, currentHop);
+
+    // Since its swarm, calls are recursive
+
+    /*
+      Now suppose node A wants to find node E and node B,C and D are intermediate nodes
+      between the path to D, To get to node D, A makes a request to B, B makes another request to
+      C then C to D, when it gets to its intended destination, D creates a response to C, then C to B, then B to A
+      Thus fulfilling the request response flow.
+
+     */
+
+    print(
+        "=================== END OF SIMULATE SWARM FIND NODE ==================");
+  }
+
+  void recursiveRequests(List<String> visitedNodes, String srcId,
+      String nodeToFind, int currentHop) {
+    // get closest nodes to nodeTofind for srcId
+    Host h = getHostFromId(srcId);
+    List<dynamic> destNodes = [];
+    if (srcId == nodeToFind) return;
+    (destNodes, _) = h.bucketCloseNess(nodeToFind);
+
+    if (destNodes.contains(nodeToFind)) {
+      destNodes = [nodeToFind];
+    }
+
+    final contains =
+        destNodes.where((element) => !visitedNodes.contains(element)).toList();
+    if (contains.isEmpty) return;
+
+    // If there are available nodes to be visited, i.e closest nodes are not in visitedNodes, then foreach node call the
+    // recursiveRequest
+    for (var nodeId in destNodes) {
+      var srcHost = hosts.firstWhere((element) => element.id == srcId);
+      var destHost = hosts.firstWhere((element) => element.id == nodeId);
+      print("*******************************************************");
+      print("Current Hop - $currentHop");
+      print("Source: $srcId K-Buckets: ${srcHost.kBuckets}");
+      print("Destination: $nodeId K-Buckets: ${destHost.kBuckets}");
+      print("*******************************************************");
+      if (animPaths[currentHop] == null) animPaths[currentHop] = [];
+      animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
+      visitedNodes.add(nodeId);
+      if (visitedNodes.contains(nodeToFind)) continue;
+      recursiveRequests([...visitedNodes], nodeId, nodeToFind, currentHop + 1);
+      visitedNodes.clear();
+    }
   }
 
   /// Generates random nodes to populate network

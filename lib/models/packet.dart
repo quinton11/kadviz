@@ -85,9 +85,14 @@ class APacket {
         ..color = const Color.fromARGB(255, 123, 1, 62)
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
+    } else if (hop == 2) {
+      pathPaint = Paint()
+        ..color = const Color.fromARGB(255, 238, 244, 212)
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1;
     } else {
       pathPaint = Paint()
-        ..color = const Color.fromARGB(255, 123, 1, 62)
+        ..color = const Color.fromARGB(255, 8, 65, 92)
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
     }
