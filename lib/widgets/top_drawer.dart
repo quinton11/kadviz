@@ -395,7 +395,7 @@ class HeaderBar extends StatelessWidget {
                   fontWeight: FontWeight.bold),
             ),
             Text(
-              networkProvider.selectedOperation.toUpperCase(),
+              "${networkProvider.selectedOperation.toUpperCase()}: ${networkProvider.nodeInQuestion}",
               style: const TextStyle(
                   fontFamily: "RobotoMono",
                   color: Color.fromARGB(255, 54, 168, 35),

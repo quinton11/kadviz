@@ -209,7 +209,8 @@ class RouterProvider extends ChangeNotifier {
     return dims;
   }
 
-  void drawSpecificTree(Paint paint, Canvas canvas, List<String> ids) {
+  void drawSpecificTree(
+      Paint paint, Canvas canvas, List<String> ids, String activeHost) {
     for (int i = 0; i < nodes.length; i++) {
       Node nd = nodes[i];
 
@@ -242,7 +243,8 @@ class RouterProvider extends ChangeNotifier {
                 : const Color.fromARGB(225, 86, 86, 86))
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
-      drawLeafs(laptopPaint, canvas, startPointZero);
+      drawLeafs(laptopPaint, canvas, startPointZero, nd.id,
+          isSpecific: true, activeHost: activeHost);
     }
   }
 
@@ -277,21 +279,37 @@ class RouterProvider extends ChangeNotifier {
             : const Color.fromARGB(225, 86, 86, 86)
         ..strokeCap = StrokeCap.round
         ..strokeWidth = 1;
-      drawLeafs(laptopPaint, canvas, startPointZero);
+      drawLeafs(laptopPaint, canvas, startPointZero, nd.id);
     }
   }
 
-  void drawLeafs(Paint paint, Canvas canvas, Offset nd) {
-    //calc paths
-    /* canvas.save();
-    canvas.translate(nd.dx - 20, nd.dy); //where to start drawing svg
-    canvas.scale(1 / 12); //scale svg to desired size
-    canvas.translate(0, 0); //svg dx dy
-    //draw path
-    canvas.drawPath(pathToDraw, paint);
-    canvas.restore(); */
-
+  void drawLeafs(Paint paint, Canvas canvas, Offset nd, String id,
+      {bool isSpecific = false, String activeHost = ''}) {
     canvas.drawCircle(Offset(nd.dx, nd.dy + 12), 5, paint);
+    // Write ids of nodes under the leaf nodes
+    if (isSpecific) {
+      // if specific, convert id to original and write
+      int reverseCloseNess =
+          int.parse(id, radix: 2) ^ int.parse(activeHost, radix: 2);
+      String reverseXor = reverseCloseNess.toRadixString(2);
+      id = reverseXor;
+      if (reverseXor.length < networkSize) {
+        id = ('0' * (networkSize - reverseXor.length)) + reverseXor;
+      }
+    }
+    paintId(id, canvas, Offset(nd.dx - 15, nd.dy + 30), paint.color);
+  }
+
+  void paintId(String id, Canvas canvas, Offset start, Color color) {
+    final textSpan = TextSpan(
+        text: id,
+        style: TextStyle(color: color, fontFamily: 'RobotoMono', fontSize: 12));
+
+    final textPainter =
+        TextPainter(text: textSpan, textDirection: TextDirection.ltr);
+
+    textPainter.layout(minWidth: 0, maxWidth: 50);
+    textPainter.paint(canvas, start);
   }
 
   void paintText(String txt, Canvas canvas, Offset start, Offset end) {
@@ -321,17 +339,21 @@ class RouterProvider extends ChangeNotifier {
 
 // add the respomse to the paths object
 // then pass it to the packet, along with added meta information
-  void setAnimationPath(
-      Map<int, List<Map<String, String>>> paths, String operation) {
+  void setAnimationPath(Map<int, List<Map<String, String>>> paths,
+      String operationMode, String operation) {
     // use switch case to check if dht or swarm, then run respective animation
     //algorithms
     if (animPackets.isNotEmpty) {
       return;
     }
-    switch (operation) {
+    switch (operationMode) {
       case (dhtFormat):
         dhtSetAnimationPath(paths);
       case (swarmFormat):
+        if (operation == swarmHIVE) {
+          dhtSetAnimationPath(paths);
+          break;
+        }
         swarmSetAnimationPath(paths);
     }
 
@@ -339,7 +361,7 @@ class RouterProvider extends ChangeNotifier {
   }
 
   void dhtSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
-    print('Animating..');
+    print('DHT Animating..');
     print(paths);
     stackPaths = paths;
 
@@ -379,7 +401,7 @@ class RouterProvider extends ChangeNotifier {
   }
 
   void swarmSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
-    print('Animating..');
+    print('SWARM Animating..');
     print(paths);
     stackPaths = paths;
 
@@ -515,6 +537,8 @@ class RouterProvider extends ChangeNotifier {
   }
 
   bool checkPacketControlIsDone() {
+    //print("Checking if animation is done");
+    //print(packetControl);
     for (var key in packetControl.keys) {
       for (var value in packetControl[key]!) {
         if (!value) {

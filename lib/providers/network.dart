@@ -22,7 +22,7 @@ class NetworkProvider with ChangeNotifier {
   late Map<int, List<Map<String, String>>> animPaths = {};
   late Map<int, List<Map<String, Map<String, bool>>>> destResponse = {};
   late List<String> operations = const [
-    swarmBOOTNODE,
+    swarmHIVE,
     swarmtSTORE,
     swarmRETRIEVE,
     swarmFINDNODE
@@ -88,6 +88,9 @@ class NetworkProvider with ChangeNotifier {
       case swarmFINDNODE:
         print(swarmFINDNODE);
         simulateSwarmFindNode();
+      case swarmHIVE:
+        print(swarmHIVE);
+        simulateSwarmHive();
     }
     simulate = true;
     animationOption = singleOperationAnimation;
@@ -103,7 +106,8 @@ class NetworkProvider with ChangeNotifier {
 // add extra info to the animPaths
   void simulatePing() {
     final random = Random();
-    String srcId = _hostIds[random.nextInt(_hostIds.length)];
+    String srcId =
+        _nodeSelected ? _activeHost : _hostIds[random.nextInt(_hostIds.length)];
     String destId = '';
     bool unique = false;
     while (!unique) {
@@ -132,7 +136,8 @@ class NetworkProvider with ChangeNotifier {
   void simulateFindNode() {
     // get src
     final random = Random();
-    String srcId = _hostIds[random.nextInt(_hostIds.length)];
+    String srcId =
+        _nodeSelected ? _activeHost : _hostIds[random.nextInt(_hostIds.length)];
     String nodeToFind = '';
     bool unique = false;
     Host h = getHostFromId(srcId);
@@ -247,7 +252,8 @@ class NetworkProvider with ChangeNotifier {
     print("=================== SIMULATE SWARM FIND NODE ==================");
     // get src
     final random = Random();
-    String srcId = _hostIds[random.nextInt(_hostIds.length)];
+    String srcId =
+        _nodeSelected ? _activeHost : _hostIds[random.nextInt(_hostIds.length)];
     String nodeToFind = '';
     bool unique = false;
     Host h = getHostFromId(srcId);
@@ -323,6 +329,63 @@ class NetworkProvider with ChangeNotifier {
       if (visitedNodes.contains(nodeToFind)) continue;
       recursiveRequests([...visitedNodes], nodeId, nodeToFind, currentHop + 1);
       visitedNodes.clear();
+    }
+  }
+
+  void simulateSwarmHive() {
+    print("=================== SIMULATE SWARM HIVE ==================");
+    // get src
+
+    bool unique = false;
+    String srcId = '';
+    while (!unique) {
+      srcId = generateRandomBinaryNumber(length: networkSize);
+      if (_hostIds.contains(srcId)) {
+        continue;
+      }
+      unique = true;
+    }
+    nodeInQuestion = srcId;
+    int currentHop = 0;
+
+    _hostIds.add(srcId);
+    Host host = Host(id: srcId, isActive: false);
+    hosts.add(host);
+
+    var visitedNodes = [srcId];
+    recursiveHiveCalls(srcId, bootNodeId, currentHop, visitedNodes);
+
+    print("*******************************Host buckets after simulation:");
+    print(host.kBuckets);
+
+    hosts.sort((na, nb) => (na.id).compareTo(nb.id));
+    if (_activeHost != '') populateActiveHostBucket();
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
+
+    print("=================== END OF SIMULATE SWARM HIVE ==================");
+  }
+
+  void recursiveHiveCalls(
+      String srcId, String destId, int currentHop, List<String> visitedNodes) {
+    Host src = getHostFromId(srcId);
+    Host dest = getHostFromId(destId);
+    if (animPaths[currentHop] == null) animPaths[currentHop] = [];
+    animPaths[currentHop]!.add({"src": srcId, "dest": destId});
+    visitedNodes.add(destId);
+    src.populateBucket(destId);
+
+    var (nodeIds, _) = dest.bucketCloseNess(srcId);
+    List<String> nextNodesConvert = List<String>.from(nodeIds);
+    var responseMap = createResponseMap(visitedNodes, nextNodesConvert);
+    if (destResponse[currentHop] == null) destResponse[currentHop] = [];
+    destResponse[currentHop]!.add({destId: responseMap});
+    for (var nodeId in nodeIds) {
+      print('Node: $nodeId');
+      if (nodeId == srcId) continue;
+      if (src.populateBucket(nodeId)) continue;
+      recursiveHiveCalls(srcId, nodeId, currentHop + 1, visitedNodes);
     }
   }
 
@@ -414,6 +477,10 @@ class NetworkProvider with ChangeNotifier {
 
     networkSize = netSize;
     populateHosts();
+  }
+
+  bool networkFull() {
+    return _hostIds.length == pow(2, networkSize).toInt();
   }
 
   /// Add a new node with a unique id

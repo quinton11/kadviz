@@ -137,14 +137,14 @@ class RouterPainter extends CustomPainter {
       ..strokeWidth = 1
       ..strokeCap = StrokeCap.round;
 
-    routerProvider.drawSpecificTree(
-        paint, canvas, networkProvider.activeHostBucketIds);
+    routerProvider.drawSpecificTree(paint, canvas,
+        networkProvider.activeHostBucketIds, networkProvider.activeHost);
   }
 
   void animateOperation(Canvas canvas) {
     networkProvider.simulateOperation();
-    routerProvider.setAnimationPath(
-        networkProvider.animPaths, networkProvider.selectedFormat);
+    routerProvider.setAnimationPath(networkProvider.animPaths,
+        networkProvider.selectedFormat, networkProvider.selectedOperation);
 
     for (var element in routerProvider.animPackets) {
       element.draw(canvas);

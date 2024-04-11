@@ -26,7 +26,7 @@ class _RightDrawerState extends State<RightDrawer> {
   Widget build(BuildContext context) {
     final networkProvider =
         Provider.of<NetworkProvider>(context, listen: false);
-        final routerProvider = Provider.of<RouterProvider>(context,listen: false);
+    final routerProvider = Provider.of<RouterProvider>(context, listen: false);
     _selected = networkProvider.selectedFormat;
     return Positioned(
       right: 0,
@@ -59,17 +59,18 @@ class _RightDrawerState extends State<RightDrawer> {
                       ),
                       _selected == networkProvider.formats[1]
                           ? DiscRadioToggle(
-                              height: widget.height, width: widget.width,
-                              selectedOperation:_selectedOperation,
+                              height: widget.height,
+                              width: widget.width,
+                              selectedOperation: _selectedOperation,
                               toggleState: (value) {
                                 setState(() {
                                   _selectedOperation = value.toString();
-                                  networkProvider.setOperation(_selectedOperation);
+                                  networkProvider
+                                      .setOperation(_selectedOperation);
                                   routerProvider.clearAnimPaths();
                                   networkProvider.animate = false;
                                 });
-                              }
-                              )
+                              })
                           : DhtRadioToggle(
                               height: widget.height,
                               width: widget.width,
@@ -77,7 +78,8 @@ class _RightDrawerState extends State<RightDrawer> {
                               toggleState: (value) {
                                 setState(() {
                                   _selectedOperation = value.toString();
-                                  networkProvider.setOperation(_selectedOperation);
+                                  networkProvider
+                                      .setOperation(_selectedOperation);
                                   routerProvider.clearAnimPaths();
                                   networkProvider.animate = false;
                                 });

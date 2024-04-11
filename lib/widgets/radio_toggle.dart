@@ -5,12 +5,14 @@ class RadioToggle extends StatelessWidget {
   final String value;
   final bool animate;
   final Function triggerChange;
+  final bool isDisabled;
   const RadioToggle(
       {super.key,
       required this.groupValue,
       required this.value,
       required this.triggerChange,
-      required this.animate});
+      required this.animate,
+      this.isDisabled = false});
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +39,11 @@ class RadioToggle extends StatelessWidget {
           value: value,
           groupValue: groupValue,
           splashRadius: 2,
-          onChanged: (value) {
-            triggerChange(value);
-          },
+          onChanged: isDisabled
+              ? null
+              : (value) {
+                  triggerChange(value);
+                },
         ),
       ),
       trailing: (isSelected && animate)

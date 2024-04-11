@@ -17,8 +17,7 @@ class DiscRadioToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final networkProvider =
-        Provider.of<NetworkProvider>(context, listen: false);
+    final networkProvider = Provider.of<NetworkProvider>(context);
     return SizedBox(
       height: height - 100,
       width: width - 60,
@@ -31,12 +30,14 @@ class DiscRadioToggle extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               RadioToggle(
-                  groupValue: selectedOperation,
-                  value: networkProvider.operations[0],
-                  animate: networkProvider.animate,
-                  triggerChange: (value) {
-                    toggleState(value);
-                  }),
+                groupValue: selectedOperation,
+                value: networkProvider.operations[0],
+                animate: networkProvider.animate,
+                triggerChange: (value) {
+                  toggleState(value);
+                },
+                isDisabled: networkProvider.networkFull(),
+              ),
               RadioToggle(
                   groupValue: selectedOperation,
                   value: networkProvider.operations[1],
