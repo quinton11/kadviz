@@ -52,12 +52,15 @@ class APacket {
   late Paint packetPaint;
   late Paint packetInnerPaint;
   late Paint pathPaint;
-  late double speed = 2;
+  late double speed = 1;
+  double offset = 0.1;
+
   late bool done = false;
   final int hop;
   final int doneIdx;
   final String src;
   final String dest;
+  final int networkSize;
 
   APacket(
       {required this.pos,
@@ -65,7 +68,8 @@ class APacket {
       required this.hop,
       required this.doneIdx,
       required this.src,
-      required this.dest}) {
+      required this.dest,
+      required this.networkSize}) {
     //packet paints
     packetPaint = Paint()
       ..color = const Color.fromARGB(255, 84, 178, 232)
@@ -95,6 +99,14 @@ class APacket {
         ..strokeWidth = 1;
     }
     pathPaint = packetInnerPaint;
+
+    if (networkSize == 4) {
+      offset = 0.01;
+      speed = 2;
+    } else {
+      offset = 0.1;
+      speed = 1;
+    }
   }
 
   /// Draw packet on canvas
@@ -117,8 +129,6 @@ class APacket {
   }
 
   bool withinBounds(Vector2 bound) {
-    double offset = 0.01;
-
     double xnear = (bound.x - pos.x).abs();
     double ynear = (bound.y - pos.y).abs();
     if ((xnear <= offset) && (ynear <= offset)) {

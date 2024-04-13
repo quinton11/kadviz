@@ -13,15 +13,20 @@ class NewNodeButton extends StatelessWidget {
       bottom: 20,
       right: 100,
       child: OutlinedButton.icon(
-          style: const ButtonStyle(
-            backgroundColor: MaterialStatePropertyAll<Color>(
+          style: ButtonStyle(
+            backgroundColor: const MaterialStatePropertyAll<Color>(
                 Color.fromARGB(255, 61, 57, 57)),
-            side: MaterialStatePropertyAll(BorderSide.none),
+            side: const MaterialStatePropertyAll(BorderSide.none),
+            shape: MaterialStatePropertyAll<RoundedRectangleBorder>(
+                RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(3.0),
+                    side: const BorderSide(
+                        color: Color.fromARGB(255, 54, 168, 35), width: 1.0))),
           ),
           icon: const Icon(
             Icons.add,
             size: 15,
-            color: Color.fromARGB(255, 84, 178, 232),
+            color: Color.fromARGB(255, 54, 168, 35),
           ),
           onPressed: () {
             networkProvider.addNode();
@@ -30,9 +35,9 @@ class NewNodeButton extends StatelessWidget {
           label: const Text(
             'Node',
             style: TextStyle(
-                fontFamily: 'RobotoMono',
+                fontFamily: 'JetBrainsMono',
                 fontSize: 12,
-                color: Color.fromARGB(255, 84, 178, 232)),
+                color: Color.fromARGB(255, 54, 168, 35)),
           )),
     );
   }

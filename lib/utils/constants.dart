@@ -6,7 +6,7 @@ const String dhtSTORE = 'Store';
 const String swarmFINDNODE = 'Find-Node';
 const String swarmHIVE = 'Hive';
 const String swarmRETRIEVE = 'Retrieve';
-const String swarmtSTORE = 'Store';
+const String swarmSTORE = 'Store';
 
 const String singlePacketAnimation = 'Packet';
 const String singleOperationAnimation = 'Operation';

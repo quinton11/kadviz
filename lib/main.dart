@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/home/kademlia.dart';
+import 'package:kademlia2d/home/pre_kademlia.dart';
 import 'package:kademlia2d/providers/network.dart';
 import 'package:kademlia2d/providers/router.dart';
 import 'package:provider/provider.dart';
@@ -28,7 +29,10 @@ class MyApp extends StatelessWidget {
               seedColor: const Color.fromARGB(255, 84, 178, 232),
               onBackground: const Color.fromARGB(255, 32, 32, 32)),
         ),
-        home: const KademliaHome(),
+        routes: {
+          '/': (context) => const ConfigureNetwork(),
+          '/home': (context) => const KademliaHome(),
+        },
         debugShowCheckedModeBanner: false,
       ),
     );

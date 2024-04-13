@@ -23,9 +23,9 @@ class NetworkProvider with ChangeNotifier {
   late Map<int, List<Map<String, Map<String, bool>>>> destResponse = {};
   late List<String> operations = const [
     swarmHIVE,
-    swarmtSTORE,
+    swarmFINDNODE,
+    swarmSTORE,
     swarmRETRIEVE,
-    swarmFINDNODE
   ];
   late List<String> dhtOperations = const [
     dhtPING,
@@ -38,6 +38,8 @@ class NetworkProvider with ChangeNotifier {
   late String selectedFormat = formats[0];
   late String animationOption = 'Default';
   late String nodeInQuestion = '';
+  late bool isOperationActive = false;
+  late String operationText = '';
   NetworkProvider() {
     populateHosts();
   }
@@ -66,6 +68,25 @@ class NetworkProvider with ChangeNotifier {
     });
 
     print("Network Provider:::singlePacketAnimate");
+  }
+
+  void deactivateOperation() {
+    isOperationActive = false;
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
+  }
+
+  void activateOperation(bool active, String operationTxt) {
+    isOperationActive = active;
+    operationText = operationTxt;
+
+    Future.delayed(const Duration(milliseconds: 900), () {
+      deactivateOperation();
+    });
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
   }
 
   void simulateOperation() {
@@ -280,8 +301,11 @@ class NetworkProvider with ChangeNotifier {
     nodeInQuestion = nodeToFind;
 
     int currentHop = 0;
-    List<String> visitedNodes = [];
-    recursiveRequests(visitedNodes, srcId, nodeToFind, currentHop);
+    //List<String> visitedNodes = [];
+    List<String> distinctPaths = [];
+    Map<String, List<String>> distinctPathsDestMap = {};
+    recursiveRequestss(
+        srcId, nodeToFind, currentHop, distinctPaths, distinctPathsDestMap, 0);
 
     // Since its swarm, calls are recursive
 
@@ -297,8 +321,18 @@ class NetworkProvider with ChangeNotifier {
         "=================== END OF SIMULATE SWARM FIND NODE ==================");
   }
 
-  void recursiveRequests(List<String> visitedNodes, String srcId,
-      String nodeToFind, int currentHop) {
+/* Distinct paths dest map is to keep track of each path in the recursive requests starting from the initial
+hop which is 0. In subsequent hops, we check for the path the node making the request is in then we add that node
+to the appropriate path array, then we check if the destNodes are in that array. Basically speaking, if you've made a request in that
+path, you cannot make another request */
+  void recursiveRequests(
+      List<String> visitedNodes,
+      String srcId,
+      String nodeToFind,
+      int currentHop,
+      List<String> distinctPaths,
+      Map<String, List<String>> distinctPathsDestMap,
+      {int distinctPathIndex = 0}) {
     // get closest nodes to nodeTofind for srcId
     Host h = getHostFromId(srcId);
     List<dynamic> destNodes = [];
@@ -309,13 +343,23 @@ class NetworkProvider with ChangeNotifier {
       destNodes = [nodeToFind];
     }
 
+    if (currentHop == 10) return;
     final contains =
         destNodes.where((element) => !visitedNodes.contains(element)).toList();
     if (contains.isEmpty) return;
+    if (currentHop != 0) {
+      distinctPathsDestMap[distinctPaths[distinctPathIndex]]!.add(srcId);
+    }
 
     // If there are available nodes to be visited, i.e closest nodes are not in visitedNodes, then foreach node call the
     // recursiveRequest
-    for (var nodeId in destNodes) {
+    for (var nodeId in contains) {
+      if (currentHop == 0) {
+        distinctPathsDestMap[nodeId] = [];
+        distinctPathsDestMap[nodeId]!.add(nodeId);
+        distinctPaths.add(nodeId);
+        distinctPathIndex = distinctPaths.length - 1;
+      }
       var srcHost = hosts.firstWhere((element) => element.id == srcId);
       var destHost = hosts.firstWhere((element) => element.id == nodeId);
       print("*******************************************************");
@@ -327,8 +371,74 @@ class NetworkProvider with ChangeNotifier {
       animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
       visitedNodes.add(nodeId);
       if (visitedNodes.contains(nodeToFind)) continue;
-      recursiveRequests([...visitedNodes], nodeId, nodeToFind, currentHop + 1);
+      if (distinctPathsDestMap[distinctPaths[distinctPathIndex]]!
+          .contains(nodeToFind)) continue;
+      recursiveRequests(visitedNodes, nodeId, nodeToFind, currentHop + 1,
+          distinctPaths, distinctPathsDestMap,
+          distinctPathIndex: distinctPathIndex);
       visitedNodes.clear();
+    }
+  }
+
+  void recursiveRequestss(
+      String srcId,
+      String nodeToFind,
+      int currentHop,
+      List<String> distinctPaths,
+      Map<String, List<String>> distinctPathsVisitedNodes,
+      int distinctPathIndex) {
+    print(
+        "***************************************Recursive Requestss*************************************** :");
+    print(
+        "currentHop: $currentHop srcId: $srcId nodeToFind: $nodeToFind distinctPaths: $distinctPaths distinctPathsVisitedNodes: $distinctPathsVisitedNodes distinctPathIndex: $distinctPathIndex");
+    // get closest nodes to nodeTofind for srcId
+    Host h = getHostFromId(srcId);
+    List<dynamic> destNodes = [];
+    if (srcId == nodeToFind) return;
+    (destNodes, _) = h.bucketCloseNess(nodeToFind);
+    List<String> visitedNodes = [];
+    if (currentHop != 0) {
+      visitedNodes =
+          distinctPathsVisitedNodes[distinctPaths[distinctPathIndex]]!;
+    }
+
+    if (currentHop > 6) return;
+
+    if (destNodes.contains(nodeToFind)) {
+      destNodes = [nodeToFind];
+    }
+
+    final contains =
+        destNodes.where((element) => !visitedNodes.contains(element)).toList();
+    if (contains.isEmpty) return;
+
+    // If there are available nodes to be visited, i.e closest nodes are not in visitedNodes, then foreach node call the
+    // recursiveRequest
+    for (var nodeId in contains) {
+      if (currentHop == 0) {
+        distinctPathsVisitedNodes[nodeId] = [];
+        distinctPathsVisitedNodes[nodeId]!.add(nodeId);
+        distinctPaths.add(nodeId);
+        distinctPathIndex = distinctPaths.length - 1;
+        print("Distinct Paths: $distinctPaths");
+        print("Distinct Paths Visited Nodes: $distinctPathsVisitedNodes");
+        print("Distinct Path Index: $distinctPathIndex");
+      }
+      var srcHost = hosts.firstWhere((element) => element.id == srcId);
+      var destHost = hosts.firstWhere((element) => element.id == nodeId);
+
+      print("*******************************************************");
+      print("Current Hop - $currentHop");
+      print("Source: $srcId K-Buckets: ${srcHost.kBuckets}");
+      print("Destination: $nodeId K-Buckets: ${destHost.kBuckets}");
+      print("*******************************************************");
+
+      if (animPaths[currentHop] == null) animPaths[currentHop] = [];
+      animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
+      if (nodeId == nodeToFind) continue;
+      distinctPathsVisitedNodes[distinctPaths[distinctPathIndex]]!.add(nodeId);
+      recursiveRequestss(nodeId, nodeToFind, currentHop + 1, distinctPaths,
+          distinctPathsVisitedNodes, distinctPathIndex);
     }
   }
 
@@ -336,27 +446,33 @@ class NetworkProvider with ChangeNotifier {
     print("=================== SIMULATE SWARM HIVE ==================");
     // get src
 
+// if node is selected, use that node as the source
+// look to ensure convergence in find node
     bool unique = false;
-    String srcId = '';
-    while (!unique) {
-      srcId = generateRandomBinaryNumber(length: networkSize);
-      if (_hostIds.contains(srcId)) {
-        continue;
+    String srcId = _nodeSelected ? _activeHost : '';
+    reselectBootNode(srcId);
+    if (srcId == '') {
+      srcId = _hostIds[Random().nextInt(_hostIds.length)];
+      while (!unique) {
+        srcId = generateRandomBinaryNumber(length: networkSize);
+        if (_hostIds.contains(srcId)) {
+          continue;
+        }
+        unique = true;
       }
-      unique = true;
-    }
-    nodeInQuestion = srcId;
-    int currentHop = 0;
+      nodeInQuestion = srcId;
 
-    _hostIds.add(srcId);
-    Host host = Host(id: srcId, isActive: false);
-    hosts.add(host);
+      _hostIds.add(srcId);
+      Host host = Host(id: srcId, isActive: false);
+      hosts.add(host);
+    }
+
+    int currentHop = 0;
 
     var visitedNodes = [srcId];
     recursiveHiveCalls(srcId, bootNodeId, currentHop, visitedNodes);
 
     print("*******************************Host buckets after simulation:");
-    print(host.kBuckets);
 
     hosts.sort((na, nb) => (na.id).compareTo(nb.id));
     if (_activeHost != '') populateActiveHostBucket();
@@ -389,9 +505,27 @@ class NetworkProvider with ChangeNotifier {
     }
   }
 
+  void simulateSwarmStore() {
+    // This is just like swarm FIND NODE,
+  }
+
+  void reselectBootNode(String notNode) {
+    bool unique = false;
+    while (unique) {
+      bootNodeId = _hostIds[Random().nextInt(_hostIds.length)];
+      if (bootNodeId != notNode) {
+        unique = true;
+      }
+    }
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
+  }
+
   /// Generates random nodes to populate network
   void populateHosts() {
     _hostIds = generateRandomNodes();
+    reselectBootNode('');
 
     //create boot Host
     Host bootHost = Host(id: bootNodeId, isActive: false);
@@ -401,11 +535,16 @@ class NetworkProvider with ChangeNotifier {
       if (id != bootNodeId) {
         Host host = Host(id: id, isActive: false);
         hosts.add(host);
-
-        networkRequest(host, bootHost, RPCRequest.bootNode);
+        bootHost.populateBucket(id);
       }
     }
 
+    for (var id in _hostIds) {
+      if (id != bootNodeId) {
+        Host host = getHostFromId(id);
+        networkRequest(host, bootHost, RPCRequest.bootNode);
+      }
+    }
     //print("");
     //print("=====================================================");
 
@@ -470,10 +609,12 @@ class NetworkProvider with ChangeNotifier {
   List<String> get activeHostBucketIds => _activeHostBucketIds;
 
   /// Update the size of the network, default 2^4
-  set setNetworkSize(int netSize) {
+  void setNetworkSize(int netSize) {
     if (netSize == networkSize) {
       return;
     }
+    _hostIds.clear();
+    hosts.clear();
 
     networkSize = netSize;
     populateHosts();
@@ -493,8 +634,9 @@ class NetworkProvider with ChangeNotifier {
     }
 
     bool unique = false;
+    String id = '';
     while (!unique) {
-      String id = generateRandomBinaryNumber(length: networkSize);
+      id = generateRandomBinaryNumber(length: networkSize);
       if (_hostIds.contains(id)) {
         continue;
       }
@@ -510,6 +652,7 @@ class NetworkProvider with ChangeNotifier {
     }
     hosts.sort((na, nb) => (na.id).compareTo(nb.id));
     if (_activeHost != '') populateActiveHostBucket();
+    activateOperation(true, "Node added: $id");
     notifyListeners();
   }
 
@@ -526,9 +669,7 @@ class NetworkProvider with ChangeNotifier {
       hostIds.add(id);
 
       //set first node to bootnode
-      if (bootNodeId == '') {
-        bootNodeId = id;
-      }
+      bootNodeId = id;
     }
 
     hostIds.sort();

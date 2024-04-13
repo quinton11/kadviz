@@ -104,7 +104,7 @@ class RouterProvider extends ChangeNotifier {
 
     String parentId = node.parentId;
     vmath.Vector2 startingPoint =
-        vmath.Vector2(canvasWidth / 2, 80); // if root node
+        vmath.Vector2(canvasWidth / 2, 150); // if root node
     if (id != 'root') {
       String branchId = id[id.length - 1];
       startingPoint = (branches[parentId][branchId] as Branch).endPoint;
@@ -189,9 +189,21 @@ class RouterProvider extends ChangeNotifier {
   Map<String, double> getLengthAndDegree(int currentDepth, int maxDepth) {
     //currently handles max 4 depths
     Map<String, double> dims = {};
+
+    if (maxDepth == 4) {
+      return get4BitLengthAndDegree(currentDepth);
+    } else if (maxDepth == 5) {
+      return get5BitLengthAndDegree(currentDepth);
+    }
+
+    return dims;
+  }
+
+  Map<String, double> get4BitLengthAndDegree(int currentDepth) {
+    Map<String, double> dims = {};
     if (currentDepth == 0) {
       dims['length'] = 380;
-      dims['angle'] = 75;
+      dims['angle'] = 80;
     } else if (currentDepth == 1) {
       dims['length'] = 160;
       dims['angle'] = 75;
@@ -199,13 +211,36 @@ class RouterProvider extends ChangeNotifier {
       dims['length'] = 100;
       dims['angle'] = 55;
     } else if (currentDepth == 3) {
-      dims['length'] = 80;
+      dims['length'] = 60;
       dims['angle'] = 35;
     } else if (currentDepth == 4) {
       dims['length'] = 80;
       dims['angle'] = 30;
     }
+    return dims;
+  }
 
+  Map<String, double> get5BitLengthAndDegree(int currentDepth) {
+    Map<String, double> dims = {};
+    if (currentDepth == 0) {
+      dims['length'] = 450;
+      dims['angle'] = 80;
+    } else if (currentDepth == 1) {
+      dims['length'] = 220;
+      dims['angle'] = 82;
+    } else if (currentDepth == 2) {
+      dims['length'] = 110;
+      dims['angle'] = 75;
+    } else if (currentDepth == 3) {
+      dims['length'] = 55;
+      dims['angle'] = 65;
+    } else if (currentDepth == 4) {
+      dims['length'] = 40;
+      dims['angle'] = 40;
+    } else if (currentDepth == 5) {
+      dims['length'] = 20;
+      dims['angle'] = 10;
+    }
     return dims;
   }
 
@@ -392,7 +427,8 @@ class RouterProvider extends ChangeNotifier {
             hop: k,
             doneIdx: doneid,
             src: p["src"] as String,
-            dest: p["dest"] as String));
+            dest: p["dest"] as String,
+            networkSize: networkSize));
         print(animPackets.length);
         doneid += 1;
         animPaths.clear();
@@ -436,7 +472,8 @@ class RouterProvider extends ChangeNotifier {
             hop: k,
             doneIdx: doneid,
             src: p["src"] as String,
-            dest: p["dest"] as String));
+            dest: p["dest"] as String,
+            networkSize: networkSize));
         print(animPackets.length);
         doneid += 1;
         animPaths.clear();
@@ -468,7 +505,8 @@ class RouterProvider extends ChangeNotifier {
             hop: hop,
             doneIdx: doneId,
             src: p["dest"] as String,
-            dest: p["src"] as String));
+            dest: p["src"] as String,
+            networkSize: networkSize));
         print(animPackets.length);
         doneId += 1;
         animPaths.clear();
@@ -484,6 +522,7 @@ class RouterProvider extends ChangeNotifier {
     int closeNess = int.parse(requestSrc.id, radix: 2) ^
         int.parse(requestDest.id, radix: 2);
     String xor = closeNess.toRadixString(2);
+
     if (xor.length < networkSize) {
       xor = ('0' * (networkSize - xor.length)) + xor;
     }

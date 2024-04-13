@@ -44,7 +44,7 @@ class DhtRadioToggle extends StatelessWidget {
                   triggerChange: (value) {
                     toggleState(value);
                   }),
-              RadioToggle(
+/*               RadioToggle(
                   groupValue: selectedOperation,
                   value: networkProvider.dhtOperations[2],
                   animate: networkProvider.animate,
@@ -57,7 +57,7 @@ class DhtRadioToggle extends StatelessWidget {
                   animate: networkProvider.animate,
                   triggerChange: (value) {
                     toggleState(value);
-                  })
+                  }) */
             ],
           ),
         ),

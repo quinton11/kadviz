@@ -45,7 +45,7 @@ class DiscRadioToggle extends StatelessWidget {
                   triggerChange: (value) {
                     toggleState(value);
                   }),
-              RadioToggle(
+              /*          RadioToggle(
                   groupValue: selectedOperation,
                   value: networkProvider.operations[2],
                   animate: networkProvider.animate,
@@ -58,7 +58,7 @@ class DiscRadioToggle extends StatelessWidget {
                   animate: networkProvider.animate,
                   triggerChange: (value) {
                     toggleState(value);
-                  })
+                  }) */
             ],
           ),
         ),

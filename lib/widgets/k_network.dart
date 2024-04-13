@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kademlia2d/home/pre_kademlia.dart';
 import 'package:kademlia2d/providers/network.dart';
 import 'package:kademlia2d/widgets/add_node.dart';
 import 'package:kademlia2d/widgets/right_drawer.dart';
@@ -37,7 +38,7 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
           child: Center(
             child: SizedBox(
               height: widget.sectionHeight - 150,
-              width: widget.width - 50,
+              width: widget.width / 2,
               child: const DecoratedBox(
                 decoration: BoxDecoration(color: Colors.transparent),
                 child: Align(
@@ -97,6 +98,51 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
               _topisActive = !_topisActive;
             });
           },
+        ),
+        Positioned(
+          top: 20,
+          left: widget.width - 250,
+          child: SizedBox(
+            height: 30,
+            width: 150,
+            child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) {
+                      return const ConfigureNetwork();
+                    }),
+                  );
+                },
+                child: const Text(
+                  "Configure Network",
+                  style: TextStyle(
+                      color: Color.fromARGB(255, 54, 168, 35),
+                      fontFamily: 'RobotoMono',
+                      fontSize: 12),
+                )),
+          ),
+        ),
+        Positioned(
+          bottom: 20,
+          left: 100,
+          child: AnimatedOpacity(
+            opacity: networkProvider.isOperationActive ? 1 : 0,
+            duration: const Duration(milliseconds: 500),
+            child: Container(
+                padding: const EdgeInsets.all(8.0),
+                color: Colors.transparent, // Background color of the container
+                constraints: const BoxConstraints(
+                  maxWidth: 200.0, // Limit the width of the container
+                ),
+                child: Text(
+                  networkProvider.operationText,
+                  style: const TextStyle(
+                      color: Color.fromARGB(255, 54, 168, 35),
+                      fontFamily: 'JetBrainsMono',
+                      fontSize: 12),
+                )),
+          ),
         )
       ],
     );
