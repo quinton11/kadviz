@@ -9,6 +9,7 @@ import 'package:kademlia2d/utils/constants.dart';
 import 'package:vector_math/vector_math.dart' as vmath;
 import 'package:flutter/material.dart';
 import 'package:path_drawing/path_drawing.dart';
+import 'package:logger/logger.dart';
 
 class RouterProvider extends ChangeNotifier {
   List<Node> nodes = [];
@@ -26,6 +27,10 @@ class RouterProvider extends ChangeNotifier {
   bool routerSet = false;
   String currentOperation = '';
   int currentPacket = 0;
+  var logger = Logger(
+    level: Level.debug,
+    printer: PrettyPrinter(),
+  );
   Path pathToDraw = parseSvgPathData(
       'M455.5,348H447V99.5c0-17.369-14.131-31.5-31.5-31.5h-368C30.131,68,16,82.131,16,99.5V348H7.5c-4.142,0-7.5,3.358-7.5,7.5v16C0,384.458,10.542,395,23.5,395h416c12.958,0,23.5-10.542,23.5-23.5v-16C463,351.358,459.642,348,455.5,348z M31,99.5C31,90.402,38.402,83,47.5,83h368c9.098,0,16.5,7.402,16.5,16.5V348H31V99.5zM448,371.5c0,4.687-3.813,8.5-8.5,8.5h-416c-4.687,0-8.5-3.813-8.5-8.5V363h169.025c-0.011,0.166-0.025,0.331-0.025,0.5c0,4.142,3.358,7.5,7.5,7.5h80c4.142,0,7.5-3.358,7.5-7.5c0-0.169-0.014-0.334-0.025-0.5H448V371.5z');
 
@@ -39,11 +44,11 @@ class RouterProvider extends ChangeNotifier {
 
     // to prevent rebuilding tree
     /* if (routerSet) {
-      //print('Canvas sizes are the same');
+      //logger.i('Canvas sizes are the same');
       return;
     } */
     /* if (cW == canvasWidth && cH == canvasHeight) {
-      print('Canvas sizes are the same');
+      logger.i('Canvas sizes are the same');
       return;
     } */
 
@@ -63,9 +68,9 @@ class RouterProvider extends ChangeNotifier {
   }
 
   void setCurrentOperation(String op) {
-    /*  print(op);
-    print('here');
-    print(currentOperation); */
+    /*  logger.i(op);
+    logger.i('here');
+    logger.i(currentOperation); */
     if (op == currentOperation) {
       return;
     }
@@ -178,7 +183,7 @@ class RouterProvider extends ChangeNotifier {
       addBranch({nodeId: calcNodeBranch(node, maxDepth, currentDepth)});
     }
 
-    //print("Depth $currentDepth - ${[...nodes]}");
+    //logger.i("Depth $currentDepth - ${[...nodes]}");
 
     if (currentDepth != maxDepth) {
       buildTree(maxDepth, currentDepth, parentIds: parentIdsPass);
@@ -392,12 +397,12 @@ class RouterProvider extends ChangeNotifier {
         swarmSetAnimationPath(paths);
     }
 
-    print("PACKET CONTROL $packetControl");
+    logger.i("PACKET CONTROL $packetControl");
   }
 
   void dhtSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
-    print('DHT Animating..');
-    print(paths);
+    logger.i('DHT Animating..');
+    logger.i(paths);
     stackPaths = paths;
 
     //get keys in map
@@ -429,7 +434,7 @@ class RouterProvider extends ChangeNotifier {
             src: p["src"] as String,
             dest: p["dest"] as String,
             networkSize: networkSize));
-        print(animPackets.length);
+        logger.i(animPackets.length);
         doneid += 1;
         animPaths.clear();
       }
@@ -437,8 +442,8 @@ class RouterProvider extends ChangeNotifier {
   }
 
   void swarmSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
-    print('SWARM Animating..');
-    print(paths);
+    logger.i('SWARM Animating..');
+    logger.i(paths);
     stackPaths = paths;
 
     //get keys in map
@@ -474,7 +479,7 @@ class RouterProvider extends ChangeNotifier {
             src: p["src"] as String,
             dest: p["dest"] as String,
             networkSize: networkSize));
-        print(animPackets.length);
+        logger.i(animPackets.length);
         doneid += 1;
         animPaths.clear();
       }
@@ -507,7 +512,7 @@ class RouterProvider extends ChangeNotifier {
             src: p["dest"] as String,
             dest: p["src"] as String,
             networkSize: networkSize));
-        print(animPackets.length);
+        logger.i(animPackets.length);
         doneId += 1;
         animPaths.clear();
       }
@@ -526,17 +531,17 @@ class RouterProvider extends ChangeNotifier {
     if (xor.length < networkSize) {
       xor = ('0' * (networkSize - xor.length)) + xor;
     }
-    /*  print("Calc");
-    print("Src: ${requestSrc.id}");
-    print("Dest: ${requestDest.id}");
-    print("Xor: $xor"); */
+    /*  logger.i("Calc");
+    logger.i("Src: ${requestSrc.id}");
+    logger.i("Dest: ${requestDest.id}");
+    logger.i("Xor: $xor"); */
     int common = (xor.indexOf('1'));
 
-/*     print(
+/*     logger.i(
         "Common parent: ${common == 0 ? "root" : requestSrc.id.substring(0, common)}"); */
     int cPLoop = (requestSrc.id.length - common).toInt();
-    /*  print("Loop for $cPLoop times");
-    print("Done calc"); */
+    /*  logger.i("Loop for $cPLoop times");
+    logger.i("Done calc"); */
     // start to common
     String start = requestSrc.id;
     for (int i = 0; i < cPLoop; i++) {
@@ -547,17 +552,17 @@ class RouterProvider extends ChangeNotifier {
       }
       final startBranch = branches[start]["0"].startPoint;
       final endBranch = branches[end]["0"].startPoint;
-      /* print("Start node - $start - point - ${startBranch}");
-      print("End node - $end - point - ${endBranch}"); */
+      /* logger.i("Start node - $start - point - ${startBranch}");
+      logger.i("End node - $end - point - ${endBranch}"); */
 
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
     }
-    //print(animPaths);
+    //logger.i(animPaths);
 
     //common to end loop
-    /* print("");
-    print("Narrowing down"); */
+    /* logger.i("");
+    logger.i("Narrowing down"); */
     for (int i = cPLoop; i > 0; i--) {
       String end = start + requestDest.id[requestDest.id.length - i];
       if (i == networkSize) {
@@ -566,8 +571,8 @@ class RouterProvider extends ChangeNotifier {
       }
       final startBranch = branches[start]["0"].startPoint;
       final endBranch = branches[end]["0"].startPoint;
-      /* print("Start node - $start - point - ${startBranch}");
-      print("End node - $end - point - ${endBranch}"); */
+      /* logger.i("Start node - $start - point - ${startBranch}");
+      logger.i("End node - $end - point - ${endBranch}"); */
       animPaths.add({"from": startBranch, "to": endBranch});
       start = end;
     }
@@ -576,8 +581,8 @@ class RouterProvider extends ChangeNotifier {
   }
 
   bool checkPacketControlIsDone() {
-    //print("Checking if animation is done");
-    //print(packetControl);
+    //logger.i("Checking if animation is done");
+    //logger.i(packetControl);
     for (var key in packetControl.keys) {
       for (var value in packetControl[key]!) {
         if (!value) {
@@ -585,7 +590,7 @@ class RouterProvider extends ChangeNotifier {
         }
       }
     }
-    print("Done with animation");
+    logger.i("Done with animation");
 
     return true;
   }

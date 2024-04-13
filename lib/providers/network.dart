@@ -7,6 +7,7 @@ import 'package:binary_counter/binary_counter.dart';
 import 'package:kademlia2d/models/packet.dart';
 import 'package:kademlia2d/utils/constants.dart';
 import 'package:kademlia2d/utils/enums.dart';
+import 'package:logger/logger.dart';
 
 class NetworkProvider with ChangeNotifier {
   late List<Host> hosts = [];
@@ -40,6 +41,10 @@ class NetworkProvider with ChangeNotifier {
   late String nodeInQuestion = '';
   late bool isOperationActive = false;
   late String operationText = '';
+  var logger = Logger(
+    level: Level.debug,
+    printer: PrettyPrinter(),
+  );
   NetworkProvider() {
     populateHosts();
   }
@@ -56,7 +61,7 @@ class NetworkProvider with ChangeNotifier {
       notifyListeners();
     });
 
-    print("Network Provider:::toggleAnimate after done: $selectedOperation");
+    logger.i("Network Provider:::toggleAnimate after done: $selectedOperation");
   }
 
   void singlePacketAnimate() {
@@ -67,7 +72,7 @@ class NetworkProvider with ChangeNotifier {
       notifyListeners();
     });
 
-    print("Network Provider:::singlePacketAnimate");
+    logger.i("Network Provider:::singlePacketAnimate");
   }
 
   void deactivateOperation() {
@@ -95,22 +100,22 @@ class NetworkProvider with ChangeNotifier {
     }
     switch (selectedOperation) {
       case dhtPING:
-        print(dhtPING);
+        logger.i(dhtPING);
         simulatePing();
       case dhtFINDNODE:
-        print(dhtFINDNODE);
+        logger.i(dhtFINDNODE);
         simulateFindNode();
       case dhtFINDVALUE:
-        print(dhtFINDVALUE);
+        logger.i(dhtFINDVALUE);
         simulatePing();
       case dhtSTORE:
-        print(dhtSTORE);
+        logger.i(dhtSTORE);
         simulatePing();
       case swarmFINDNODE:
-        print(swarmFINDNODE);
+        logger.i(swarmFINDNODE);
         simulateSwarmFindNode();
       case swarmHIVE:
-        print(swarmHIVE);
+        logger.i(swarmHIVE);
         simulateSwarmHive();
     }
     simulate = true;
@@ -179,9 +184,9 @@ class NetworkProvider with ChangeNotifier {
       unique = true;
     }
     // get node to find
-    print('Source: $srcId');
-    print('Node to find $nodeToFind');
-    print('Bucket Ids: $bucketIds');
+    logger.i('Source: $srcId');
+    logger.i('Node to find $nodeToFind');
+    logger.i('Bucket Ids: $bucketIds');
     nodeInQuestion = nodeToFind;
     List<String> visitedNode = [];
     visitedNode.add(srcId);
@@ -189,7 +194,7 @@ class NetworkProvider with ChangeNotifier {
     List<dynamic> destNodes = [];
     // check for src's k nearest nodes
     (destNodes, _) = h.bucketCloseNess(nodeToFind);
-    print('Dest Nodes: $destNodes');
+    logger.i('Dest Nodes: $destNodes');
 
     if (destNodes.contains(nodeToFind)) {
       destNodes = [nodeToFind];
@@ -201,7 +206,7 @@ class NetworkProvider with ChangeNotifier {
     while (!converged) {
       final contains =
           destNodes.where((element) => !visitedNode.contains(element)).toList();
-      print('Nodes not visited $contains');
+      logger.i('Nodes not visited $contains');
       if (visitedNode.contains(nodeToFind)) break;
       if (contains.isEmpty) {
         //converged, return list of hops
@@ -215,19 +220,19 @@ class NetworkProvider with ChangeNotifier {
         //path[currentHop].add({"src": srcId, "dest": v});
         var srcHost = hosts.firstWhere((element) => element.id == srcId);
         var destHost = hosts.firstWhere((element) => element.id == v);
-        print("*******************************************************");
-        print("Source K-Buckets: ${srcHost.kBuckets}");
-        print("Destination K-Buckets: ${destHost.kBuckets}");
-        print("*******************************************************");
+        logger.i("*******************************************************");
+        logger.i("Source K-Buckets: ${srcHost.kBuckets}");
+        logger.i("Destination K-Buckets: ${destHost.kBuckets}");
+        logger.i("*******************************************************");
 
         animPaths[currentHop]!.add({"src": srcId, "dest": v});
-        print('HOP: $currentHop src: $srcId, "dest": $v');
+        logger.i('HOP: $currentHop src: $srcId, "dest": $v');
       }
       //animPaths.addAll(path);
-      print('After hop: $animPaths');
+      logger.i('After hop: $animPaths');
       visitedNode.addAll([...destNodes]);
       visitedNode = visitedNode.toSet().toList();
-      print('Visited Nodes: $visitedNode');
+      logger.i('Visited Nodes: $visitedNode');
       // set current hop
       currentHop += 1;
       // if not create current hop, add src and dest keys to current hop
@@ -247,9 +252,9 @@ class NetworkProvider with ChangeNotifier {
           for (var v in destNodes) {
             Host dst = getHostFromId(v);
             (nextNodes, _) = dst.bucketCloseNess(nodeToFind);
-            print('');
-            print('Dest Node: $v  close nodes: $nextNodes');
-            print('');
+            logger.i('');
+            logger.i('Dest Node: $v  close nodes: $nextNodes');
+            logger.i('');
             // Add response, which is nextNodes for request to destNode
             List<String> nextNodesConvert = List<String>.from(nextNodes);
             var responseMap = createResponseMap(visitedNode, nextNodesConvert);
@@ -262,15 +267,15 @@ class NetworkProvider with ChangeNotifier {
       }
     }
 
-    print('Anim Paths!!!');
-    print(animPaths);
-    print('Dest nodes and their responses!!!');
-    print(destResponse);
+    logger.i('Anim Paths!!!');
+    logger.i(animPaths);
+    logger.i('Dest nodes and their responses!!!');
+    logger.i(destResponse);
   }
 
   void simulateSwarmFindNode() {
     // Generate src and node to find
-    print("=================== SIMULATE SWARM FIND NODE ==================");
+    logger.i("=================== SIMULATE SWARM FIND NODE ==================");
     // get src
     final random = Random();
     String srcId =
@@ -295,9 +300,9 @@ class NetworkProvider with ChangeNotifier {
       unique = true;
     }
     // get node to find
-    print('Source: $srcId');
-    print('Node to find $nodeToFind');
-    print('Bucket Ids: $bucketIds');
+    logger.i('Source: $srcId');
+    logger.i('Node to find $nodeToFind');
+    logger.i('Bucket Ids: $bucketIds');
     nodeInQuestion = nodeToFind;
 
     int currentHop = 0;
@@ -317,7 +322,7 @@ class NetworkProvider with ChangeNotifier {
 
      */
 
-    print(
+    logger.i(
         "=================== END OF SIMULATE SWARM FIND NODE ==================");
   }
 
@@ -362,11 +367,11 @@ path, you cannot make another request */
       }
       var srcHost = hosts.firstWhere((element) => element.id == srcId);
       var destHost = hosts.firstWhere((element) => element.id == nodeId);
-      print("*******************************************************");
-      print("Current Hop - $currentHop");
-      print("Source: $srcId K-Buckets: ${srcHost.kBuckets}");
-      print("Destination: $nodeId K-Buckets: ${destHost.kBuckets}");
-      print("*******************************************************");
+      logger.i("*******************************************************");
+      logger.i("Current Hop - $currentHop");
+      logger.i("Source: $srcId K-Buckets: ${srcHost.kBuckets}");
+      logger.i("Destination: $nodeId K-Buckets: ${destHost.kBuckets}");
+      logger.i("*******************************************************");
       if (animPaths[currentHop] == null) animPaths[currentHop] = [];
       animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
       visitedNodes.add(nodeId);
@@ -387,9 +392,9 @@ path, you cannot make another request */
       List<String> distinctPaths,
       Map<String, List<String>> distinctPathsVisitedNodes,
       int distinctPathIndex) {
-    print(
+    logger.i(
         "***************************************Recursive Requestss*************************************** :");
-    print(
+    logger.i(
         "currentHop: $currentHop srcId: $srcId nodeToFind: $nodeToFind distinctPaths: $distinctPaths distinctPathsVisitedNodes: $distinctPathsVisitedNodes distinctPathIndex: $distinctPathIndex");
     // get closest nodes to nodeTofind for srcId
     Host h = getHostFromId(srcId);
@@ -420,18 +425,18 @@ path, you cannot make another request */
         distinctPathsVisitedNodes[nodeId]!.add(nodeId);
         distinctPaths.add(nodeId);
         distinctPathIndex = distinctPaths.length - 1;
-        print("Distinct Paths: $distinctPaths");
-        print("Distinct Paths Visited Nodes: $distinctPathsVisitedNodes");
-        print("Distinct Path Index: $distinctPathIndex");
+        logger.i("Distinct Paths: $distinctPaths");
+        logger.i("Distinct Paths Visited Nodes: $distinctPathsVisitedNodes");
+        logger.i("Distinct Path Index: $distinctPathIndex");
       }
       var srcHost = hosts.firstWhere((element) => element.id == srcId);
       var destHost = hosts.firstWhere((element) => element.id == nodeId);
 
-      print("*******************************************************");
-      print("Current Hop - $currentHop");
-      print("Source: $srcId K-Buckets: ${srcHost.kBuckets}");
-      print("Destination: $nodeId K-Buckets: ${destHost.kBuckets}");
-      print("*******************************************************");
+      logger.i("*******************************************************");
+      logger.i("Current Hop - $currentHop");
+      logger.i("Source: $srcId K-Buckets: ${srcHost.kBuckets}");
+      logger.i("Destination: $nodeId K-Buckets: ${destHost.kBuckets}");
+      logger.i("*******************************************************");
 
       if (animPaths[currentHop] == null) animPaths[currentHop] = [];
       animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
@@ -443,7 +448,7 @@ path, you cannot make another request */
   }
 
   void simulateSwarmHive() {
-    print("=================== SIMULATE SWARM HIVE ==================");
+    logger.i("=================== SIMULATE SWARM HIVE ==================");
     // get src
 
 // if node is selected, use that node as the source
@@ -472,7 +477,7 @@ path, you cannot make another request */
     var visitedNodes = [srcId];
     recursiveHiveCalls(srcId, bootNodeId, currentHop, visitedNodes);
 
-    print("*******************************Host buckets after simulation:");
+    logger.i("*******************************Host buckets after simulation:");
 
     hosts.sort((na, nb) => (na.id).compareTo(nb.id));
     if (_activeHost != '') populateActiveHostBucket();
@@ -480,7 +485,8 @@ path, you cannot make another request */
       notifyListeners();
     });
 
-    print("=================== END OF SIMULATE SWARM HIVE ==================");
+    logger
+        .i("=================== END OF SIMULATE SWARM HIVE ==================");
   }
 
   void recursiveHiveCalls(
@@ -498,7 +504,7 @@ path, you cannot make another request */
     if (destResponse[currentHop] == null) destResponse[currentHop] = [];
     destResponse[currentHop]!.add({destId: responseMap});
     for (var nodeId in nodeIds) {
-      print('Node: $nodeId');
+      logger.i('Node: $nodeId');
       if (nodeId == srcId) continue;
       if (src.populateBucket(nodeId)) continue;
       recursiveHiveCalls(srcId, nodeId, currentHop + 1, visitedNodes);
@@ -545,14 +551,14 @@ path, you cannot make another request */
         networkRequest(host, bootHost, RPCRequest.bootNode);
       }
     }
-    //print("");
-    //print("=====================================================");
+    //logger.i("");
+    //logger.i("=====================================================");
 
-    print(bootNodeId);
+    logger.i(bootNodeId);
     for (var h in hosts) {
-      print('Id: ${h.id} - ${h.kBuckets}');
+      logger.i('Id: ${h.id} - ${h.kBuckets}');
     }
-    //print("=====================================================");
+    //logger.i("=====================================================");
 
     notifyListeners();
   }
@@ -647,7 +653,7 @@ path, you cannot make another request */
       Host bootHost = getHostFromId(bootNodeId);
 
       networkRequest(host, bootHost, RPCRequest.bootNode);
-      print(host.kBuckets);
+      logger.i(host.kBuckets);
       unique = true;
     }
     hosts.sort((na, nb) => (na.id).compareTo(nb.id));
@@ -686,10 +692,10 @@ path, you cannot make another request */
   void networkRequest(Host src, Host dest, RPCRequest req) {
     switch (req) {
       case RPCRequest.bootNode:
-        print('Boot Node request');
+        logger.i('Boot Node request');
         bootNodeHandler(src, dest);
       default:
-        print('Default case');
+        logger.i('Default case');
     }
   }
 
@@ -702,22 +708,22 @@ path, you cannot make another request */
 
     // source makes iterative requests to dest response ids/address
     // based on response, either make request again or stop there
-    print("==============================================");
-    print('RPC request');
+    logger.i("==============================================");
+    logger.i('RPC request');
     resPacket = dest.handleRequest(
         RequestPacket(src: src.id, dest: dest.id, req: RPCRequest.bootNode));
-    print('Close nodes: ${resPacket.data}');
-    print("==============================================");
-    print(resPacket.res.toString());
+    logger.i('Close nodes: ${resPacket.data}');
+    logger.i("==============================================");
+    logger.i(resPacket.res.toString());
 
     // add bootnode to src kbuckets
     src.populateBucket(dest.id);
 
     //populate node with returned bucket
     for (var cn in resPacket.data) {
-      //print('Populating bucket for node ${src.id} with $cn');
+      //logger.i('Populating bucket for node ${src.id} with $cn');
       if (src.populateBucket(cn)) continue;
-      //print('Done populating bucket for node ${src.id} with $cn');
+      //logger.i('Done populating bucket for node ${src.id} with $cn');
       Host destP = getHostFromId(cn);
       bootNodeHandler(src, destP);
     }
