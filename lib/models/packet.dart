@@ -61,6 +61,7 @@ class APacket {
   final String src;
   final String dest;
   final int networkSize;
+  final int pathId;
 
   APacket(
       {required this.pos,
@@ -69,7 +70,8 @@ class APacket {
       required this.doneIdx,
       required this.src,
       required this.dest,
-      required this.networkSize}) {
+      required this.networkSize,
+      this.pathId = 0}) {
     //packet paints
     packetPaint = Paint()
       ..color = const Color.fromARGB(255, 84, 178, 232)

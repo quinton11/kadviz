@@ -124,6 +124,7 @@ class _StackDrawerState extends State<StackDrawer> {
                           paint: packet.pathPaint,
                           isSelected: _selectedIndex == index.toString(),
                           currentOperation: networkProvider.selectedOperation,
+                          path: packet.pathId,
                         ),
                         onTap: () {
                           setState(() {
@@ -190,7 +191,8 @@ class CallStackInfoBar extends StatelessWidget {
       required this.dest,
       required this.paint,
       required this.isSelected,
-      required this.currentOperation});
+      required this.currentOperation,
+      required this.path});
 
   final int hop;
   final String src;
@@ -198,6 +200,7 @@ class CallStackInfoBar extends StatelessWidget {
   final Paint paint;
   final bool isSelected;
   final String currentOperation;
+  final int path;
 
   @override
   Widget build(BuildContext context) {
@@ -256,6 +259,14 @@ class CallStackInfoBar extends StatelessWidget {
               "HOP - $hop",
               style: const TextStyle(
                   color: Color.fromARGB(255, 84, 178, 232),
+                  fontFamily: 'RobotoMono',
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "PATH - $path",
+              style: TextStyle(
+                  color: paint.color,
                   fontFamily: 'RobotoMono',
                   fontSize: 12,
                   fontWeight: FontWeight.bold),

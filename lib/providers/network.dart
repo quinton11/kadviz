@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:kademlia2d/models/host.dart';
 import 'package:binary_counter/binary_counter.dart';
 import 'package:kademlia2d/models/packet.dart';
+import 'package:kademlia2d/models/path.dart';
 import 'package:kademlia2d/utils/constants.dart';
 import 'package:kademlia2d/utils/enums.dart';
 import 'package:logger/logger.dart';
@@ -13,6 +14,7 @@ class NetworkProvider with ChangeNotifier {
   late List<Host> hosts = [];
   late List<String> _hostIds;
   final List<String> _activeHostBucketIds = [];
+  final List<PathInfo> pathInfo = [];
   late int _activeIndex = 0;
   late bool _nodeSelected = false;
   late int networkSize = 4;
@@ -439,6 +441,11 @@ path, you cannot make another request */
       logger.i("*******************************************************");
 
       if (animPaths[currentHop] == null) animPaths[currentHop] = [];
+      pathInfo.add(PathInfo(
+          hop: currentHop,
+          srcId: srcId,
+          destId: nodeId,
+          path: distinctPathIndex));
       animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
       if (nodeId == nodeToFind) continue;
       distinctPathsVisitedNodes[distinctPaths[distinctPathIndex]]!.add(nodeId);

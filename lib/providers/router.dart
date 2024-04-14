@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:kademlia2d/models/branch.dart';
 import 'package:kademlia2d/models/node.dart';
 import 'package:kademlia2d/models/packet.dart';
+import 'package:kademlia2d/models/path.dart';
 import 'package:kademlia2d/utils/constants.dart';
 import 'package:vector_math/vector_math.dart' as vmath;
 import 'package:flutter/material.dart';
@@ -380,7 +381,8 @@ class RouterProvider extends ChangeNotifier {
 // add the respomse to the paths object
 // then pass it to the packet, along with added meta information
   void setAnimationPath(Map<int, List<Map<String, String>>> paths,
-      String operationMode, String operation) {
+      String operationMode, String operation,
+      {List<PathInfo> pathInfos = const []}) {
     // use switch case to check if dht or swarm, then run respective animation
     //algorithms
     if (animPackets.isNotEmpty) {
@@ -394,7 +396,7 @@ class RouterProvider extends ChangeNotifier {
           dhtSetAnimationPath(paths);
           break;
         }
-        swarmSetAnimationPath(paths);
+        swarmSetAnimationPath(paths, pathInfos);
     }
 
     logger.i("PACKET CONTROL $packetControl");
@@ -441,7 +443,8 @@ class RouterProvider extends ChangeNotifier {
     }
   }
 
-  void swarmSetAnimationPath(Map<int, List<Map<String, String>>> paths) {
+  void swarmSetAnimationPath(
+      Map<int, List<Map<String, String>>> paths, List<PathInfo> pathInfos) {
     logger.i('SWARM Animating..');
     logger.i(paths);
     stackPaths = paths;
@@ -469,6 +472,10 @@ class RouterProvider extends ChangeNotifier {
       for (var p in path) {
         //request
         sourceToDest(p["src"] as String, p["dest"] as String);
+        final path = pathInfos.firstWhere((element) =>
+            element.hop == k &&
+            element.srcId == p["src"] &&
+            element.destId == p["dest"]);
 
         vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
         animPackets.add(APacket(
@@ -478,7 +485,8 @@ class RouterProvider extends ChangeNotifier {
             doneIdx: doneid,
             src: p["src"] as String,
             dest: p["dest"] as String,
-            networkSize: networkSize));
+            networkSize: networkSize,
+            pathId: path.path));
         logger.i(animPackets.length);
         doneid += 1;
         animPaths.clear();
@@ -502,6 +510,10 @@ class RouterProvider extends ChangeNotifier {
       for (var p in path) {
         //response
         sourceToDest(p["dest"] as String, p["src"] as String);
+        final path = pathInfos.firstWhere((element) =>
+            element.hop == k &&
+            element.srcId == p["src"] &&
+            element.destId == p["dest"]);
 
         vmath.Vector2 st = animPaths[0]["from"] as vmath.Vector2;
         animPackets.add(APacket(
@@ -511,7 +523,8 @@ class RouterProvider extends ChangeNotifier {
             doneIdx: doneId,
             src: p["dest"] as String,
             dest: p["src"] as String,
-            networkSize: networkSize));
+            networkSize: networkSize,
+            pathId: path.path));
         logger.i(animPackets.length);
         doneId += 1;
         animPaths.clear();

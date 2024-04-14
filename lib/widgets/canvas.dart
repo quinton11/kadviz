@@ -144,7 +144,8 @@ class RouterPainter extends CustomPainter {
   void animateOperation(Canvas canvas) {
     networkProvider.simulateOperation();
     routerProvider.setAnimationPath(networkProvider.animPaths,
-        networkProvider.selectedFormat, networkProvider.selectedOperation);
+        networkProvider.selectedFormat, networkProvider.selectedOperation,
+        pathInfos: networkProvider.pathInfo);
 
     for (var element in routerProvider.animPackets) {
       element.draw(canvas);
