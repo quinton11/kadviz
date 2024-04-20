@@ -65,9 +65,9 @@ class _RightDrawerState extends State<RightDrawer> {
                               toggleState: (value) {
                                 setState(() {
                                   _selectedOperation = value.toString();
+                                  routerProvider.clearAnimPaths();
                                   networkProvider
                                       .setOperation(_selectedOperation);
-                                  routerProvider.clearAnimPaths();
                                   networkProvider.animate = false;
                                 });
                               })
@@ -78,9 +78,9 @@ class _RightDrawerState extends State<RightDrawer> {
                               toggleState: (value) {
                                 setState(() {
                                   _selectedOperation = value.toString();
+                                  routerProvider.clearAnimPaths();
                                   networkProvider
                                       .setOperation(_selectedOperation);
-                                  routerProvider.clearAnimPaths();
                                   networkProvider.animate = false;
                                 });
                               }),
@@ -88,13 +88,15 @@ class _RightDrawerState extends State<RightDrawer> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           ToggleAnimate(
-                              animate: networkProvider.animate,
-                              toggleAnimate: () {
-                                setState(() {
-                                  networkProvider.toggleAnimate();
-                                  //routerProvider.clearAnimPaths();
-                                });
-                              }),
+                            animate: networkProvider.animate,
+                            toggleAnimate: () {
+                              setState(() {
+                                networkProvider.toggleAnimate();
+                                //routerProvider.clearAnimPaths();
+                              });
+                            },
+                            stop: false,
+                          ),
                           RouterFormatToggle(
                             triggerChange: (value) {
                               setState(() {

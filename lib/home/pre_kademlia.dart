@@ -125,6 +125,7 @@ class _ConfigBoxState extends State<ConfigBox> {
               onTap: () {
                 final networkProvider =
                     Provider.of<NetworkProvider>(context, listen: false);
+                networkProvider.resetSelectedHost();
                 networkProvider.setNetworkSize(_selectedOption);
                 Navigator.pushNamed(context, '/home');
               },

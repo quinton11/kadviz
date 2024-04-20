@@ -10,6 +10,7 @@ const String swarmSTORE = 'Store';
 
 const String singlePacketAnimation = 'Packet';
 const String singleOperationAnimation = 'Operation';
+const String singlePathAnimation = 'Path';
 
 const String dhtFormat = 'DHT (ipfs)';
 const String swarmFormat = 'DISC (swarm)';

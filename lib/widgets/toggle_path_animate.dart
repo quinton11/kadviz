@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 
-class ToggleAnimate extends StatelessWidget {
+class TogglePathAnimate extends StatelessWidget {
   final bool animate;
   final Function toggleAnimate;
-  final bool stop;
-  const ToggleAnimate(
-      {super.key,
-      required this.animate,
-      required this.toggleAnimate,
-      required this.stop});
+  const TogglePathAnimate(
+      {super.key, required this.animate, required this.toggleAnimate});
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +15,7 @@ class ToggleAnimate extends StatelessWidget {
         side: MaterialStatePropertyAll(BorderSide.none),
       ),
       icon: Icon(
-        animate
-            ? stop
-                ? Icons.stop
-                : Icons.pause
-            : Icons.play_arrow,
+        animate ? Icons.stop : Icons.fast_forward,
         size: 20,
         color: const Color.fromARGB(255, 54, 168, 35),
       ),

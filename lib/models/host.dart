@@ -2,6 +2,12 @@ import 'dart:collection';
 
 import 'package:kademlia2d/models/packet.dart';
 import 'package:kademlia2d/utils/enums.dart';
+import 'package:logger/logger.dart';
+
+var logger = Logger(
+  level: Level.debug,
+  printer: PrettyPrinter(),
+);
 
 class Host {
   final String id;
@@ -9,7 +15,7 @@ class Host {
   late Map<String, List<String>> kBuckets = {};
   late int k = 3;
   late int networkSize = 4;
-  Host({required this.id, required this.isActive});
+  Host({required this.id, required this.isActive, required this.networkSize});
 
   List<String> getBucketIds() {
     List<String> ids = [];
@@ -26,17 +32,22 @@ class Host {
   /// Adds a discovered node to the k-bucket
   bool populateBucket(String idk) {
     //  check proximity
+    if (idk == id) return true;
+    logger.i('Populating bucket for host - $id');
     int closeNess = int.parse(id, radix: 2) ^ int.parse(idk, radix: 2);
-    //print('CloseNess score: $closeNess');
+    logger.i(
+        'CloseNess score for bucket - $idk in host - $id bucket ::: Closeness: $closeNess');
     String xor = closeNess.toRadixString(2);
     if (xor.length < networkSize) {
       xor = ('0' * (networkSize - xor.length)) + xor;
     }
-    //print('XOR score: $xor');
+    logger.i('XOR score: $xor');
 
     //  get bucket node id belongs to
-    String bucketId = (xor.indexOf('1') + 1).toString();
-    //print('BucketId $bucketId');
+    int indexOf = xor.indexOf('1');
+    logger.i('Index of: $indexOf');
+    String bucketId = (indexOf + 1).toString();
+    logger.i('BucketId $bucketId');
 
     if (!kBuckets.containsKey(bucketId)) {
       //print('Bucket not created yet');
@@ -50,16 +61,20 @@ class Host {
     //print('Bucket: $bucket');
     //print('Does bucket exist: $exists');
 
-    print(kBuckets);
+    logger.i('K-Buckets $kBuckets in host $id');
+    logger.i('Bucket $bucketId has ${bucket.length} nodes');
+    logger.i('K value: $k');
     //bucket is full
+    logger.i('Bucket is full? ${bucket.length == k}');
     if (bucket.length == k) return true;
 
     //id already in bucket
+    logger.i('Node already in bucket? $exists');
     if (exists) return true;
 
     kBuckets[bucketId]!.add(idk);
-    print('Adding node to bucket');
-    print(kBuckets);
+    logger.i('Adding node to bucket');
+    logger.i(kBuckets);
 
     return false;
   }
@@ -69,7 +84,8 @@ class Host {
     return id == i;
   }
 
-  (List<dynamic>, bool) bucketCloseNess(String i) {
+  (List<dynamic>, bool) bucketCloseNess(String i,
+      {List<String> dontInclude = const []}) {
     Map<String, int> closeNess = {};
     //find the most closest nodes
     //for each id in bucket
@@ -93,10 +109,16 @@ class Host {
         key: (k) => k, value: (k) => closeNess[k]);
 
     final sortedMapTolist = sortedMap.keys.toList();
-    print(
+    logger.i(
         "Bucket of $id, these are the nodes I have closest to $i: $sortedMapTolist");
 
-    final kClosest = sortedMapTolist.take(k).toList();
+    final filteredList = sortedMapTolist
+        .where((element) => !dontInclude.contains(element))
+        .toList();
+    logger.i(
+        "Bucket of $id, these are the nodes I have closest to $i: $filteredList that aren't in the dontInclude list");
+
+    final kClosest = filteredList.take(k).toList();
 
     return (kClosest, false);
   }
@@ -105,8 +127,8 @@ class Host {
     //based on request type perform functionality
     String src = req.src;
     String dest = req.dest;
-    print('Source: $src');
-    print('Dest: $dest');
+    logger.i('Source: $src');
+    logger.i('Dest: $dest');
 
     if (!destMatch(dest)) {
       return ResponsePacket(src: id, dest: src, res: RPCResponse.wrongDest);
@@ -127,9 +149,9 @@ class Host {
         res.data = closeNodes;
         //check if src is in bucket, if not add src to bucket
         //if closest nodes found send nodes as response
-        print('BootNode Request');
+        logger.i('BootNode Request');
       default:
-        print('Default case');
+        logger.i('Default case');
     }
 
     return res;

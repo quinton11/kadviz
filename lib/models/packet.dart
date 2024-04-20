@@ -106,8 +106,8 @@ class APacket {
       offset = 0.01;
       speed = 2;
     } else {
-      offset = 0.1;
-      speed = 1;
+      offset = 1;
+      speed = 1.5;
     }
   }
 

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:kademlia2d/models/packet.dart';
 import 'package:kademlia2d/providers/network.dart';
 import 'package:kademlia2d/providers/router.dart';
+import 'package:kademlia2d/widgets/toggle_animate.dart';
+import 'package:kademlia2d/widgets/toggle_path_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:kademlia2d/utils/constants.dart';
 
@@ -50,6 +52,8 @@ class _TopDrawerState extends State<TopDrawer> {
                   currentOperation: routerProvider.currentOperation,
                   resetPacket: routerProvider.resetPacket,
                   setCurrentPacket: routerProvider.setActivePacket,
+                  setActivePath: routerProvider.setActivePath,
+                  resetPacketsInPath: routerProvider.resetPacketsInActivePath,
                   currentHop: routerProvider.currentHop,
                 )
               ],
@@ -81,6 +85,8 @@ class StackDrawer extends StatefulWidget {
       required this.currentOperation,
       required this.resetPacket,
       required this.setCurrentPacket,
+      required this.setActivePath,
+      required this.resetPacketsInPath,
       required this.currentHop});
 
   final TopDrawer widget;
@@ -88,6 +94,8 @@ class StackDrawer extends StatefulWidget {
   final String currentOperation;
   final Function resetPacket;
   final Function setCurrentPacket;
+  final Function setActivePath;
+  final Function resetPacketsInPath;
   final int currentHop;
   @override
   State<StackDrawer> createState() => _StackDrawerState();
@@ -98,10 +106,12 @@ class _StackDrawerState extends State<StackDrawer> {
   late bool _callStackInfoSelected = false;
   late String srcId = "";
   late String destId = "";
+  late int selectedPath = 0;
 
   @override
   Widget build(BuildContext context) {
     final networkProvider = Provider.of<NetworkProvider>(context);
+    final pathConvergedEmpty = networkProvider.pathConverged.isEmpty;
     return SizedBox(
       width: widget.widget.width,
       height: widget.widget.height - 80,
@@ -125,6 +135,9 @@ class _StackDrawerState extends State<StackDrawer> {
                           isSelected: _selectedIndex == index.toString(),
                           currentOperation: networkProvider.selectedOperation,
                           path: packet.pathId,
+                          pathConverged: pathConvergedEmpty
+                              ? false
+                              : networkProvider.pathConverged[packet.pathId]!,
                         ),
                         onTap: () {
                           setState(() {
@@ -133,10 +146,9 @@ class _StackDrawerState extends State<StackDrawer> {
                               _selectedIndex = index.toString();
                               widget.setCurrentPacket(
                                   packet.src, packet.dest, packet.hop);
-                              widget.resetPacket();
                               srcId = packet.src;
                               destId = packet.dest;
-                              networkProvider.singlePacketAnimate();
+                              selectedPath = packet.pathId;
 
                               // pop open dialogue box
                               _callStackInfoSelected = true;
@@ -176,7 +188,50 @@ class _StackDrawerState extends State<StackDrawer> {
                     },
                     srcId: srcId,
                     destId: destId,
-                    hop: widget.currentHop)
+                    hop: widget.currentHop),
+              if (networkProvider.animate || _selectedIndex != "")
+                Positioned(
+                  right: 50,
+                  bottom: 20,
+                  child: ToggleAnimate(
+                    animate: networkProvider.animate,
+                    toggleAnimate: () {
+                      setState(() {
+                        //routerProvider.clearAnimPaths();
+                        // if animation is false
+                        if (networkProvider.animate == false) {
+                          // Set animation to single animation
+                          // then trigger single animation action
+                          widget.resetPacket();
+                          networkProvider.singlePacketAnimate();
+                        } else {
+                          networkProvider.toggleAnimate();
+                        }
+                      });
+                    },
+                    stop: true,
+                  ),
+                ),
+              if (_selectedIndex != '' &&
+                  networkProvider.selectedOperation == swarmFINDNODE &&
+                  !networkProvider.animate)
+                Positioned(
+                  right: 100,
+                  bottom: 20,
+                  child: TogglePathAnimate(
+                    animate: networkProvider.animate,
+                    toggleAnimate: () {
+                      setState(() {
+                        if (networkProvider.animate) return;
+
+                        widget.setActivePath(selectedPath);
+                        widget.resetPacketsInPath();
+                        // reset packets in currentPath
+                        networkProvider.singlePathAnimate();
+                      });
+                    },
+                  ),
+                ),
             ],
           )),
     );
@@ -192,7 +247,8 @@ class CallStackInfoBar extends StatelessWidget {
       required this.paint,
       required this.isSelected,
       required this.currentOperation,
-      required this.path});
+      required this.path,
+      required this.pathConverged});
 
   final int hop;
   final String src;
@@ -201,6 +257,7 @@ class CallStackInfoBar extends StatelessWidget {
   final bool isSelected;
   final String currentOperation;
   final int path;
+  final bool pathConverged;
 
   @override
   Widget build(BuildContext context) {
@@ -238,7 +295,7 @@ class CallStackInfoBar extends StatelessWidget {
               ),
             ),
             Text(
-              "/$dest/PING",
+              "/$dest/$currentOperation",
               style: const TextStyle(
                   color: Color.fromARGB(255, 84, 178, 232),
                   fontFamily: 'RobotoMono',
@@ -271,6 +328,18 @@ class CallStackInfoBar extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.bold),
             ),
+            if (currentOperation == swarmFINDNODE)
+              pathConverged
+                  ? const Icon(
+                      Icons.check,
+                      color: Colors.green,
+                      size: 20,
+                    )
+                  : const Icon(
+                      Icons.close,
+                      color: Colors.red,
+                      size: 20,
+                    )
           ],
         ),
       ),

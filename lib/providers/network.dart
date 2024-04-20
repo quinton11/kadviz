@@ -24,6 +24,7 @@ class NetworkProvider with ChangeNotifier {
   late bool simulate = false;
   late Map<int, List<Map<String, String>>> animPaths = {};
   late Map<int, List<Map<String, Map<String, bool>>>> destResponse = {};
+  late Map<int, bool> pathConverged = {};
   late List<String> operations = const [
     swarmHIVE,
     swarmFINDNODE,
@@ -51,6 +52,11 @@ class NetworkProvider with ChangeNotifier {
     populateHosts();
   }
 
+  void resetSelectedHost() {
+    _activeHost = '';
+    _nodeSelected = false;
+  }
+
   void toggleAnimate() {
     animate = !animate;
     if (animate) {
@@ -64,6 +70,17 @@ class NetworkProvider with ChangeNotifier {
     });
 
     logger.i("Network Provider:::toggleAnimate after done: $selectedOperation");
+  }
+
+  void singlePathAnimate() {
+    animate = true;
+    animationOption = singlePathAnimation;
+
+    SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+      notifyListeners();
+    });
+
+    logger.i("Network Provider:::singlePacketAnimate");
   }
 
   void singlePacketAnimate() {
@@ -128,6 +145,7 @@ class NetworkProvider with ChangeNotifier {
     selectedOperation = op;
     simulate = false;
     animPaths.clear();
+    pathConverged.clear();
     destResponse.clear();
   }
 
@@ -324,6 +342,7 @@ class NetworkProvider with ChangeNotifier {
 
      */
 
+    logger.d("Converged paths: $pathConverged");
     logger.i(
         "=================== END OF SIMULATE SWARM FIND NODE ==================");
   }
@@ -427,6 +446,7 @@ path, you cannot make another request */
         distinctPathsVisitedNodes[nodeId]!.add(nodeId);
         distinctPaths.add(nodeId);
         distinctPathIndex = distinctPaths.length - 1;
+        pathConverged[distinctPathIndex] = false;
         logger.i("Distinct Paths: $distinctPaths");
         logger.i("Distinct Paths Visited Nodes: $distinctPathsVisitedNodes");
         logger.i("Distinct Path Index: $distinctPathIndex");
@@ -447,7 +467,10 @@ path, you cannot make another request */
           destId: nodeId,
           path: distinctPathIndex));
       animPaths[currentHop]!.add({"src": srcId, "dest": nodeId});
-      if (nodeId == nodeToFind) continue;
+      if (nodeId == nodeToFind) {
+        pathConverged[distinctPathIndex] = true;
+        continue;
+      }
       distinctPathsVisitedNodes[distinctPaths[distinctPathIndex]]!.add(nodeId);
       recursiveRequestss(nodeId, nodeToFind, currentHop + 1, distinctPaths,
           distinctPathsVisitedNodes, distinctPathIndex);
@@ -472,12 +495,12 @@ path, you cannot make another request */
         }
         unique = true;
       }
-      nodeInQuestion = srcId;
 
       _hostIds.add(srcId);
-      Host host = Host(id: srcId, isActive: false);
+      Host host = Host(id: srcId, isActive: false, networkSize: networkSize);
       hosts.add(host);
     }
+    nodeInQuestion = srcId;
 
     int currentHop = 0;
 
@@ -504,6 +527,7 @@ path, you cannot make another request */
     animPaths[currentHop]!.add({"src": srcId, "dest": destId});
     visitedNodes.add(destId);
     src.populateBucket(destId);
+    dest.populateBucket(srcId);
 
     var (nodeIds, _) = dest.bucketCloseNess(srcId);
     List<String> nextNodesConvert = List<String>.from(nodeIds);
@@ -524,12 +548,15 @@ path, you cannot make another request */
 
   void reselectBootNode(String notNode) {
     bool unique = false;
-    while (unique) {
+    String prevId = bootNodeId;
+    while (!unique) {
       bootNodeId = _hostIds[Random().nextInt(_hostIds.length)];
-      if (bootNodeId != notNode) {
+      logger.i('Boot Node from Random: $bootNodeId');
+      if (bootNodeId != notNode && bootNodeId != prevId) {
         unique = true;
       }
     }
+    logger.i('Boot Node: $bootNodeId');
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       notifyListeners();
     });
@@ -541,12 +568,13 @@ path, you cannot make another request */
     reselectBootNode('');
 
     //create boot Host
-    Host bootHost = Host(id: bootNodeId, isActive: false);
+    Host bootHost =
+        Host(id: bootNodeId, isActive: false, networkSize: networkSize);
     hosts.add(bootHost);
 
     for (var id in _hostIds) {
       if (id != bootNodeId) {
-        Host host = Host(id: id, isActive: false);
+        Host host = Host(id: id, isActive: false, networkSize: networkSize);
         hosts.add(host);
         bootHost.populateBucket(id);
       }
@@ -575,6 +603,9 @@ path, you cannot make another request */
   void updateActiveHost(int index) {
     //deactivate previous host
     int idx = hosts.indexWhere((element) => element.id == _activeHost);
+    logger.i('Index - $index');
+    logger.i('Host Id before activating - $_activeHost');
+
     if (idx != -1) {
       hosts[idx].isActive = false;
     }
@@ -583,6 +614,7 @@ path, you cannot make another request */
     hosts[_activeIndex].isActive = true;
     _activeHost = hosts[_activeIndex].id;
     _nodeSelected = true;
+    logger.i('Host Id after activating - $_activeHost');
     populateActiveHostBucket();
     notifyListeners();
   }
@@ -655,7 +687,7 @@ path, you cannot make another request */
       }
 
       _hostIds.add(id);
-      Host host = Host(id: id, isActive: false);
+      Host host = Host(id: id, isActive: false, networkSize: networkSize);
       hosts.add(host);
       Host bootHost = getHostFromId(bootNodeId);
 

@@ -110,6 +110,9 @@ class RouterPainter extends CustomPainter {
       case (singlePacketAnimation):
         animatePacket(canvas);
         break;
+      case (singlePathAnimation):
+        animatePath(canvas);
+        break;
 
       default:
         cancelTimer();
@@ -148,30 +151,62 @@ class RouterPainter extends CustomPainter {
         pathInfos: networkProvider.pathInfo);
 
     for (var element in routerProvider.animPackets) {
-      element.draw(canvas);
-
       if (element.hop != routerProvider.currentHop) {
         continue;
       }
-      routerProvider.packetControl[routerProvider.currentHop]
-          ?[element.doneIdx] = element.done;
+      element.draw(canvas);
 
-      //if(routerProvider.packetControl[])
-      if (routerProvider.checkPacketControlIsDone()) {
-        if (networkProvider.animate) {
-          networkProvider.toggleAnimate();
-        }
-      }
+      hopSwitchControl(element);
+    }
 
-      if (!routerProvider.packetControl[routerProvider.currentHop]!
-          .contains(false)) {
-        if (routerProvider.packetControl.keys.length !=
-            routerProvider.currentHop + 1) {
-          routerProvider.nextHop();
-        }
+    startTimer();
+  }
+
+  void hopSwitchControl(APacket packet) {
+    routerProvider.packetControl[routerProvider.currentHop]?[packet.doneIdx] =
+        packet.done;
+
+    //if(routerProvider.packetControl[])
+    if (routerProvider.checkPacketControlIsDone()) {
+      if (networkProvider.animate) {
+        networkProvider.toggleAnimate();
       }
     }
 
+    if (!routerProvider.packetControl[routerProvider.currentHop]!
+        .contains(false)) {
+      if (routerProvider.packetControl.keys.length !=
+          routerProvider.currentHop + 1) {
+        routerProvider.nextHop();
+      }
+    }
+  }
+
+  void animatePath(Canvas canvas) {
+    for (var element in routerProvider.animPackets) {
+      bool isNotActivePath = element.pathId != routerProvider.selectedPath;
+      bool isNotCurrentHop = element.hop != routerProvider.currentHop;
+
+      // Case where paths are the same and hops aren't
+
+      if (isNotActivePath) continue;
+
+      if (isNotCurrentHop) {
+        // if current hop is do
+
+        if (!routerProvider.packetControl[routerProvider.currentHop]!
+            .contains(false)) {
+          if (routerProvider.packetControl.keys.length !=
+              routerProvider.currentHop + 1) {
+            routerProvider.nextHop();
+          }
+        }
+        continue;
+      }
+
+      element.draw(canvas);
+      hopSwitchControl(element);
+    }
     startTimer();
   }
 

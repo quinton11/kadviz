@@ -28,6 +28,7 @@ class RouterProvider extends ChangeNotifier {
   bool routerSet = false;
   String currentOperation = '';
   int currentPacket = 0;
+  int selectedPath = 0;
   var logger = Logger(
     level: Level.debug,
     printer: PrettyPrinter(),
@@ -57,6 +58,10 @@ class RouterProvider extends ChangeNotifier {
     canvasHeight = cH;
     networkSize = netSize;
     setRoutingTree(netSize);
+  }
+
+  void setActivePath(int path) {
+    selectedPath = path;
   }
 
   void setActivePacket(String src, String dest, int hop) {
@@ -624,5 +629,24 @@ class RouterProvider extends ChangeNotifier {
   void resetPacket() {
     animPackets[currentPacket].resetPacket();
     currentHop = animPackets[currentPacket].hop;
+  }
+
+  void resetPacketsInActivePath() {
+    // logger.i('Resetting packets in active path');
+    // logger.i('Before resetting packet control: $packetControl');
+    for (var packet in animPackets) {
+      if (packet.pathId == selectedPath) {
+        packetControl[packet.hop]?[packet.doneIdx] = false;
+        // logger.i(
+        //     'Hop of packet in path, Path - $selectedPath hop - ${packet.hop}');
+
+        // logger.i(
+        //     'Done idx of packet in path, Path - $selectedPath done index - ${packet.doneIdx}');
+        // logger.i('Packet control after reset - ${packetControl[packet.hop]}');
+        packet.resetPacket();
+        //logger.i('Packet done after reset - ${packet.done}');
+      }
+    }
+    currentHop = 0;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kademlia2d/home/pre_kademlia.dart';
 import 'package:kademlia2d/providers/network.dart';
+import 'package:kademlia2d/providers/router.dart';
 import 'package:kademlia2d/widgets/add_node.dart';
 import 'package:kademlia2d/widgets/right_drawer.dart';
 import 'package:kademlia2d/widgets/top_drawer.dart';
@@ -24,6 +25,7 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
   @override
   Widget build(BuildContext context) {
     final networkProvider = Provider.of<NetworkProvider>(context);
+    final routerProvider = Provider.of<RouterProvider>(context, listen: false);
     if (networkProvider.animate) {
       _topisActive = true;
     }
@@ -73,32 +75,6 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
             ),
           ),
         ),
-        const NewNodeButton(),
-        if (_rightisActive)
-          RightDrawer(height: widget.sectionHeight, width: widget.width / 4),
-        RightDrawerButton(
-          sectionHeight: widget.sectionHeight,
-          isActive: _rightisActive,
-          triggerActive: () {
-            setState(() {
-              if (!_topisActive) {
-                _rightisActive = !_rightisActive;
-              }
-            });
-          },
-        ),
-        if (_topisActive)
-          TopDrawer(height: widget.sectionHeight, width: widget.width),
-        TopDrawerButton(
-          width: widget.width,
-          isActive: _topisActive,
-          triggerActive: () {
-            setState(() {
-              _rightisActive = false;
-              _topisActive = !_topisActive;
-            });
-          },
-        ),
         Positioned(
           top: 20,
           left: widget.width - 250,
@@ -122,6 +98,35 @@ class _KademliaNetworkState extends State<KademliaNetwork> {
                       fontSize: 12),
                 )),
           ),
+        ),
+        const NewNodeButton(),
+        if (_rightisActive)
+          RightDrawer(height: widget.sectionHeight, width: widget.width / 4),
+        RightDrawerButton(
+          sectionHeight: widget.sectionHeight,
+          isActive: _rightisActive,
+          triggerActive: () {
+            setState(() {
+              if (!_topisActive) {
+                _rightisActive = !_rightisActive;
+              }
+            });
+          },
+        ),
+        if (_topisActive)
+          TopDrawer(height: widget.sectionHeight, width: widget.width),
+        TopDrawerButton(
+          width: widget.width,
+          isActive: _topisActive,
+          triggerActive: () {
+            setState(() {
+              _rightisActive = false;
+              _topisActive = !_topisActive;
+              if (!_topisActive) {
+                routerProvider.clearAnimPaths();
+              }
+            });
+          },
         ),
         Positioned(
           bottom: 20,
