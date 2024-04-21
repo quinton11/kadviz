@@ -17,17 +17,14 @@ This project is aimed at demonstrating visually the concept of kademlia routing 
 
 https://github.com/quinton11/kadviz/assets/70300837/b096e5dc-4196-4de0-b8ff-45214338a28d
 
-
-
 - Here, is Swarm's `FIND NODE` operation, visualizing the recursive nature of network request in swarm's DISC network.
 
 https://github.com/quinton11/kadviz/assets/70300837/19a1f408-406d-4c66-af07-750f6814c1dd
 
-
-
-
 - Here, a selected path in the `FIND NODE` oepration is visualized, allowing tracking of a single packet's request path, in this case, `path 0` from the `FIND NODE` operation shown here 👆🏿
-
 
 https://github.com/quinton11/kadviz/assets/70300837/4e2d71e7-7c9a-4052-9127-2b2f8c720e89
 
+### **NB**:
+
+- Not tested for web nor mobile yet, just desktop(mac)
