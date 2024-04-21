@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => RouterProvider())
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
+        title: 'Kadviz',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 84, 178, 232),
