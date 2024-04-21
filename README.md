@@ -10,10 +10,7 @@ This project is aimed at demonstrating visually the concept of kademlia routing 
 
 - Demonstrate new node onboarding and the formation of a routing table
 - Demonstrate how nodes route effectively in the p2p network via kademlia, in effect, covering all the different operations.
-- Demonstrate how nodes store content in a p2p network using kademlia routing tables
-- Demonstrate how nodes retrieve content in a p2p network using kademlia routing tables
-- Demonstrate how nodes maintain routing table _stability_ in the event of _dropout_ of known peers
 
 ### Demo
 
-- Here, we depict Swarm's HIVE operation, where nodes get to know about neighbourhood it does not know about, to populate its routing table
+- Here, we depict Swarm's HIVE operation, where nodes get to know about neighbourhood nodes it does not know about, to populate its routing table
