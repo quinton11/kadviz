@@ -27,4 +27,4 @@ https://github.com/quinton11/kadviz/assets/70300837/4e2d71e7-7c9a-4052-9127-2b2f
 
 ### **NB**:
 
-- Not tested for web nor mobile yet, just desktop(mac)
+- Not tested for web nor mobile(***no future plans***) yet, just desktop(mac)
