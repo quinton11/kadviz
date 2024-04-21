@@ -14,3 +14,7 @@ This project is aimed at demonstrating visually the concept of kademlia routing 
 ### Demo
 
 - Here, we depict Swarm's HIVE operation, where nodes get to know about neighbourhood nodes it does not know about, to populate its routing table
+
+- Here, is Swarm's FIND NODE operation, visualizing the recursive nature of network request in swarm's DISC network.
+
+- Here, a selected path in the FIND NODE oepration is visualized, allowing tracking of a single packet's request path, in this case from the FIND NODE oepration above 👆🏿
