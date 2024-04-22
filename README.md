@@ -1,4 +1,4 @@
-# **Kademlia-2d**
+# **Kadviz**
 
 Kademlia (**_Distributed Hash Table_**) is a routing algorithm which mimics a key-value store used in decentralized p2p networks to look up sources of content efficiently using the key of that content.
 
